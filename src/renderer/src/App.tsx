@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { TitleBar, Sidebar, PromptCard, SearchBar, PromptEditor, Modal, SettingsModalContent } from './components'
+import { ViewType } from './components/Sidebar'
 import { usePrompts } from './hooks/usePrompts'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2, Sparkles, Tag, ArrowLeft } from 'lucide-react'
 
 /**
  * Main Application Component
@@ -10,22 +11,59 @@ export default function App() {
     const { prompts, isLoading, createPrompt, updatePrompt, deletePrompt, toggleFavorite } =
         usePrompts()
     const [searchQuery, setSearchQuery] = useState('')
+    const [activeView, setActiveView] = useState<ViewType>('all')
+    const [selectedTag, setSelectedTag] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
-    // Filter prompts based on search query
-    const filteredPrompts = useMemo(() => {
-        if (!searchQuery.trim()) return prompts
+    // Get all unique tags with their prompt counts
+    const tagCollections = useMemo(() => {
+        const tagMap = new Map<string, number>()
+        prompts.forEach((prompt) => {
+            prompt.tags.forEach((tag) => {
+                tagMap.set(tag, (tagMap.get(tag) || 0) + 1)
+            })
+        })
+        return Array.from(tagMap.entries())
+            .map(([tag, count]) => ({ tag, count }))
+            .sort((a, b) => b.count - a.count)
+    }, [prompts])
 
-        const query = searchQuery.toLowerCase()
-        return prompts.filter(
-            (prompt) =>
-                prompt.title.toLowerCase().includes(query) ||
-                prompt.content.toLowerCase().includes(query) ||
-                prompt.description?.toLowerCase().includes(query) ||
-                prompt.tags.some((tag) => tag.toLowerCase().includes(query))
-        )
-    }, [prompts, searchQuery])
+    // Handle view change - reset selectedTag when leaving collections
+    const handleViewChange = (view: ViewType) => {
+        setActiveView(view)
+        if (view !== 'collections') {
+            setSelectedTag(null)
+        }
+    }
+
+    // Filter prompts based on search query and active view
+    const filteredPrompts = useMemo(() => {
+        let result = prompts
+
+        // Filter by view type
+        if (activeView === 'favorites') {
+            result = result.filter((p) => p.isFavorite)
+        }
+        // Filter by selected tag in collections view
+        if (activeView === 'collections' && selectedTag) {
+            result = result.filter((p) => p.tags.includes(selectedTag))
+        }
+
+        // Filter by search query
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase()
+            result = result.filter(
+                (prompt) =>
+                    prompt.title.toLowerCase().includes(query) ||
+                    prompt.content.toLowerCase().includes(query) ||
+                    prompt.description?.toLowerCase().includes(query) ||
+                    prompt.tags.some((tag) => tag.toLowerCase().includes(query))
+            )
+        }
+
+        return result
+    }, [prompts, searchQuery, activeView, selectedTag])
 
     const handleNewPrompt = () => {
         setIsModalOpen(true)
@@ -62,19 +100,46 @@ export default function App() {
 
             <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar */}
-                <Sidebar onNewPrompt={handleNewPrompt} onOpenSettings={() => setIsSettingsOpen(true)} />
+                <Sidebar
+                    onNewPrompt={handleNewPrompt}
+                    onOpenSettings={() => setIsSettingsOpen(true)}
+                    activeView={activeView}
+                    onViewChange={handleViewChange}
+                />
 
                 {/* Main Content */}
                 <main className="flex flex-1 flex-col overflow-hidden">
                     {/* Header */}
                     <header className="border-b border-border p-4">
                         <div className="mb-4">
-                            <h1 className="text-xl font-semibold text-foreground">All Prompts</h1>
+                            <div className="flex items-center gap-2">
+                                {activeView === 'collections' && selectedTag && (
+                                    <button
+                                        onClick={() => setSelectedTag(null)}
+                                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    >
+                                        <ArrowLeft className="h-4 w-4" />
+                                    </button>
+                                )}
+                                <h1 className="text-xl font-semibold text-foreground">
+                                    {activeView === 'all' && 'All Prompts'}
+                                    {activeView === 'favorites' && 'Favorites'}
+                                    {activeView === 'collections' && !selectedTag && 'Collections'}
+                                    {activeView === 'collections' && selectedTag && `#${selectedTag}`}
+                                </h1>
+                            </div>
                             <p className="text-sm text-muted-foreground">
-                                {prompts.length} prompt{prompts.length !== 1 ? 's' : ''} in your collection
+                                {activeView === 'collections' && !selectedTag
+                                    ? `${tagCollections.length} tag${tagCollections.length !== 1 ? 's' : ''}`
+                                    : `${filteredPrompts.length} prompt${filteredPrompts.length !== 1 ? 's' : ''}`}
+                                {activeView === 'favorites' && ' marked as favorite'}
+                                {activeView === 'all' && ' in your collection'}
+                                {activeView === 'collections' && selectedTag && ` with #${selectedTag}`}
                             </p>
                         </div>
-                        <SearchBar value={searchQuery} onChange={setSearchQuery} />
+                        {(activeView !== 'collections' || selectedTag) && (
+                            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+                        )}
                     </header>
 
                     {/* Content Area */}
@@ -83,6 +148,37 @@ export default function App() {
                             <div className="flex h-full items-center justify-center">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             </div>
+                        ) : activeView === 'collections' && !selectedTag ? (
+                            // Tag Collections Grid
+                            tagCollections.length === 0 ? (
+                                <div className="flex h-full flex-col items-center justify-center text-center">
+                                    <div className="mb-4 rounded-full bg-secondary p-4">
+                                        <Tag className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="mb-2 text-lg font-medium text-foreground">No tags yet</h3>
+                                    <p className="text-sm text-muted-foreground">Add tags to your prompts to organize them into collections</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                                    {tagCollections.map(({ tag, count }) => (
+                                        <button
+                                            key={tag}
+                                            onClick={() => setSelectedTag(tag)}
+                                            className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+                                        >
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-accent/20">
+                                                <Tag className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-medium text-foreground truncate">#{tag}</h3>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {count} prompt{count !== 1 ? 's' : ''}
+                                                </p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )
                         ) : filteredPrompts.length === 0 ? (
                             <EmptyState onNewPrompt={handleNewPrompt} hasSearch={!!searchQuery.trim()} />
                         ) : (

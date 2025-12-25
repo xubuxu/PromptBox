@@ -1,14 +1,18 @@
 import { Home, Star, Settings, FolderOpen, Plus } from 'lucide-react'
 
+export type ViewType = 'all' | 'favorites' | 'collections'
+
 interface SidebarProps {
     onNewPrompt: () => void
     onOpenSettings: () => void
+    activeView: ViewType
+    onViewChange: (view: ViewType) => void
 }
 
 /**
  * Main navigation sidebar
  */
-export function Sidebar({ onNewPrompt, onOpenSettings }: SidebarProps) {
+export function Sidebar({ onNewPrompt, onOpenSettings, activeView, onViewChange }: SidebarProps) {
     return (
         <aside className="flex h-full w-56 flex-col border-r border-border bg-card">
             {/* New Prompt Button */}
@@ -24,9 +28,24 @@ export function Sidebar({ onNewPrompt, onOpenSettings }: SidebarProps) {
 
             {/* Navigation Links */}
             <nav className="flex-1 space-y-1 px-3 py-2">
-                <NavItem icon={<Home className="h-4 w-4" />} label="All Prompts" active />
-                <NavItem icon={<Star className="h-4 w-4" />} label="Favorites" />
-                <NavItem icon={<FolderOpen className="h-4 w-4" />} label="Collections" />
+                <NavItem
+                    icon={<Home className="h-4 w-4" />}
+                    label="All Prompts"
+                    active={activeView === 'all'}
+                    onClick={() => onViewChange('all')}
+                />
+                <NavItem
+                    icon={<Star className="h-4 w-4" />}
+                    label="Favorites"
+                    active={activeView === 'favorites'}
+                    onClick={() => onViewChange('favorites')}
+                />
+                <NavItem
+                    icon={<FolderOpen className="h-4 w-4" />}
+                    label="Collections"
+                    active={activeView === 'collections'}
+                    onClick={() => onViewChange('collections')}
+                />
             </nav>
 
             {/* Bottom Section */}
