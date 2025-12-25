@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  /* Dark theme (default) */
+  :root,
+  :root[data-theme="dark"] {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
+    --primary: 220 90% 56%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 15%;
+    --secondary-foreground: 0 0% 90%;
+    --muted: 240 5% 18%;
+    --muted-foreground: 240 5% 55%;
+    --accent: 265 89% 66%;
+    --accent-foreground: 0 0% 100%;
+    --border: 240 5% 20%;
+    --card: 240 6% 8%;
+    --card-foreground: 0 0% 95%;
+    --radius: 0.5rem;
+  }
+
+  /* Light theme */
+  :root[data-theme="light"] {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 10%;
+    --primary: 220 90% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 5% 92%;
+    --secondary-foreground: 240 10% 20%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 5% 45%;
+    --accent: 265 89% 55%;
+    --accent-foreground: 0 0% 100%;
+    --border: 240 5% 85%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+}
+
+/* Draggable region for frameless window */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
