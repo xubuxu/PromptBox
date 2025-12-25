@@ -19,6 +19,8 @@ export interface Prompt {
     tags: string[];
     /** Whether the prompt is marked as favorite */
     isFavorite: boolean;
+    /** Number of times this prompt has been copied */
+    copyCount?: number;
     /** Unix timestamp of creation */
     createdAt: number;
     /** Unix timestamp of last update */
@@ -41,6 +43,13 @@ export interface IElectronAPI {
     // Window Controls
     toggleAlwaysOnTop: () => Promise<boolean>;
     hideWindow: () => void;
+
+    // Auto Launch
+    getAutoLaunch: () => Promise<boolean>;
+    setAutoLaunch: (enabled: boolean) => Promise<boolean>;
+
+    // Usage Statistics
+    incrementCopyCount: (id: string) => Promise<boolean>;
 }
 
 /**
@@ -53,5 +62,8 @@ export const IPC_CHANNELS = {
     EXPORT_DATA: 'data:export',
     IMPORT_DATA: 'data:import',
     TOGGLE_ALWAYS_ON_TOP: 'window:toggleAlwaysOnTop',
-    HIDE_WINDOW: 'window:hide'
+    HIDE_WINDOW: 'window:hide',
+    GET_AUTO_LAUNCH: 'app:getAutoLaunch',
+    SET_AUTO_LAUNCH: 'app:setAutoLaunch',
+    INCREMENT_COPY_COUNT: 'prompts:incrementCopyCount'
 } as const;

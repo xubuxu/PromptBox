@@ -1,65 +1,39 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
+import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { IPC_CHANNELS, Prompt } from '@shared/types'
 import {
-    getPromptsFromDisk,
-    savePromptsToDisk,
-    exportPromptsToFile,
-    importPromptsFromFile
-} from './store'
+    initDatabase,
+    getAllPrompts,
+    savePrompt,
+    deletePrompt,
+    incrementCopyCount
+} from './database'
+import { exportPromptsToFile, importPromptsFromFile } from './store'
 
 /**
  * Register all IPC handlers for the main process
  */
 export function registerIpcHandlers(): void {
+    // Initialize database on startup
+    initDatabase()
+
     // Get all prompts
-    ipcMain.handle(IPC_CHANNELS.GET_PROMPTS, async (): Promise<Prompt[]> => {
-        return await getPromptsFromDisk()
+    ipcMain.handle(IPC_CHANNELS.GET_PROMPTS, (): Prompt[] => {
+        return getAllPrompts()
     })
 
     // Save a prompt (create or update)
     ipcMain.handle(
         IPC_CHANNELS.SAVE_PROMPT,
-        async (_, prompt: Prompt): Promise<boolean> => {
-            try {
-                const prompts = await getPromptsFromDisk()
-                const existingIndex = prompts.findIndex((p) => p.id === prompt.id)
-
-                if (existingIndex >= 0) {
-                    // Update existing prompt
-                    prompts[existingIndex] = prompt
-                } else {
-                    // Add new prompt
-                    prompts.push(prompt)
-                }
-
-                await savePromptsToDisk(prompts)
-                return true
-            } catch (error) {
-                console.error('Failed to save prompt:', error)
-                return false
-            }
+        (_, prompt: Prompt): boolean => {
+            return savePrompt(prompt)
         }
     )
 
     // Delete a prompt by ID
     ipcMain.handle(
         IPC_CHANNELS.DELETE_PROMPT,
-        async (_, id: string): Promise<boolean> => {
-            try {
-                const prompts = await getPromptsFromDisk()
-                const filteredPrompts = prompts.filter((p) => p.id !== id)
-
-                if (filteredPrompts.length === prompts.length) {
-                    // Prompt not found
-                    return false
-                }
-
-                await savePromptsToDisk(filteredPrompts)
-                return true
-            } catch (error) {
-                console.error('Failed to delete prompt:', error)
-                return false
-            }
+        (_, id: string): boolean => {
+            return deletePrompt(id)
         }
     )
 
@@ -76,7 +50,7 @@ export function registerIpcHandlers(): void {
                 return 'Export cancelled'
             }
 
-            const prompts = await getPromptsFromDisk()
+            const prompts = getAllPrompts()
             await exportPromptsToFile(prompts, result.filePath)
             return `Exported ${prompts.length} prompts successfully`
         } catch (error) {
@@ -99,17 +73,16 @@ export function registerIpcHandlers(): void {
             }
 
             const importedPrompts = await importPromptsFromFile(result.filePaths[0])
-            const existingPrompts = await getPromptsFromDisk()
 
-            // Merge prompts (imported prompts override existing ones with same ID)
-            const mergedMap = new Map<string, Prompt>()
-            existingPrompts.forEach((p) => mergedMap.set(p.id, p))
-            importedPrompts.forEach((p) => mergedMap.set(p.id, p))
+            // Save each imported prompt (will insert or update)
+            let successCount = 0
+            for (const prompt of importedPrompts) {
+                if (savePrompt(prompt)) {
+                    successCount++
+                }
+            }
 
-            const mergedPrompts = Array.from(mergedMap.values())
-            await savePromptsToDisk(mergedPrompts)
-
-            return `Imported ${importedPrompts.length} prompts successfully`
+            return `Imported ${successCount} prompts successfully`
         } catch (error) {
             console.error('Import failed:', error)
             return `Import failed: ${(error as Error).message}`
@@ -132,5 +105,30 @@ export function registerIpcHandlers(): void {
         if (win) {
             win.hide()
         }
+    })
+
+    // Get auto launch status
+    ipcMain.handle(IPC_CHANNELS.GET_AUTO_LAUNCH, (): boolean => {
+        const settings = app.getLoginItemSettings()
+        return settings.openAtLogin
+    })
+
+    // Set auto launch
+    ipcMain.handle(IPC_CHANNELS.SET_AUTO_LAUNCH, (_, enabled: boolean): boolean => {
+        try {
+            app.setLoginItemSettings({
+                openAtLogin: enabled,
+                openAsHidden: true // Start minimized to tray
+            })
+            return true
+        } catch (error) {
+            console.error('Failed to set auto launch:', error)
+            return false
+        }
+    })
+
+    // Increment copy count for a prompt
+    ipcMain.handle(IPC_CHANNELS.INCREMENT_COPY_COUNT, (_, id: string): boolean => {
+        return incrementCopyCount(id)
     })
 }

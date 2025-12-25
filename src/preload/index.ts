@@ -35,6 +35,20 @@ const api: IElectronAPI = {
 
     hideWindow: (): void => {
         ipcRenderer.send(IPC_CHANNELS.HIDE_WINDOW)
+    },
+
+    // Auto Launch
+    getAutoLaunch: (): Promise<boolean> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.GET_AUTO_LAUNCH)
+    },
+
+    setAutoLaunch: (enabled: boolean): Promise<boolean> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.SET_AUTO_LAUNCH, enabled)
+    },
+
+    // Usage Statistics
+    incrementCopyCount: (id: string): Promise<boolean> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.INCREMENT_COPY_COUNT, id)
     }
 }
 

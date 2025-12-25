@@ -91,6 +91,25 @@ export function usePrompts() {
         [prompts, updatePrompt]
     )
 
+    /**
+     * Increment copy count for a prompt
+     */
+    const incrementCopyCount = useCallback(
+        async (id: string) => {
+            const success = await window.api.incrementCopyCount(id)
+            if (success) {
+                // Update local state
+                setPrompts((prev) =>
+                    prev.map((p) =>
+                        p.id === id ? { ...p, copyCount: (p.copyCount || 0) + 1 } : p
+                    )
+                )
+            }
+            return success
+        },
+        []
+    )
+
     // Fetch prompts on mount
     useEffect(() => {
         fetchPrompts()
@@ -104,6 +123,8 @@ export function usePrompts() {
         createPrompt,
         updatePrompt,
         deletePrompt,
-        toggleFavorite
+        toggleFavorite,
+        incrementCopyCount
     }
 }
+

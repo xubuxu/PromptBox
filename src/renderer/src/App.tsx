@@ -1,20 +1,30 @@
-import { useState, useMemo } from 'react'
-import { TitleBar, Sidebar, PromptCard, SearchBar, PromptEditor, Modal, SettingsModalContent } from './components'
-import { ViewType } from './components/Sidebar'
+import { useState, useMemo, useCallback } from 'react'
+import { TitleBar, Sidebar, PromptCard, SearchBar, PromptEditor, Modal, SettingsModalContent, BatchActionBar } from './components'
+import { ViewType, SourceFilter } from './components/Sidebar'
 import { usePrompts } from './hooks/usePrompts'
-import { Loader2, Sparkles, Tag, ArrowLeft } from 'lucide-react'
+import { useTheme } from './contexts/ThemeContext'
+import { Loader2, Sparkles, Tag, ArrowLeft, CheckSquare, X } from 'lucide-react'
 
 /**
  * Main Application Component
  */
 export default function App() {
-    const { prompts, isLoading, createPrompt, updatePrompt, deletePrompt, toggleFavorite } =
+    const { prompts, isLoading, createPrompt, updatePrompt, deletePrompt, toggleFavorite, incrementCopyCount } =
         usePrompts()
     const [searchQuery, setSearchQuery] = useState('')
     const [activeView, setActiveView] = useState<ViewType>('all')
+    const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
     const [selectedTag, setSelectedTag] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const { uiStyle } = useTheme()
+
+    // Selection mode state
+    const [selectionMode, setSelectionMode] = useState(false)
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+    // Dynamic style classes based on UI style
+    const cardStyleClass = uiStyle === 'gradient' ? 'card-gradient' : 'card-elevated'
 
     // Get all unique tags with their prompt counts
     const tagCollections = useMemo(() => {
@@ -45,9 +55,23 @@ export default function App() {
         if (activeView === 'favorites') {
             result = result.filter((p) => p.isFavorite)
         }
+        // Most Used view - filter to only prompts with copies and sort by copyCount
+        if (activeView === 'mostUsed') {
+            result = result
+                .filter((p) => (p.copyCount || 0) > 0)
+                .sort((a, b) => (b.copyCount || 0) - (a.copyCount || 0))
+        }
         // Filter by selected tag in collections view
         if (activeView === 'collections' && selectedTag) {
             result = result.filter((p) => p.tags.includes(selectedTag))
+        }
+        // Filter by source
+        if (activeView === 'all' && sourceFilter !== 'all') {
+            if (sourceFilter === 'user') {
+                result = result.filter((p) => !p.id.startsWith('default-'))
+            } else if (sourceFilter === 'system') {
+                result = result.filter((p) => p.id.startsWith('default-'))
+            }
         }
 
         // Filter by search query
@@ -63,7 +87,65 @@ export default function App() {
         }
 
         return result
-    }, [prompts, searchQuery, activeView, selectedTag])
+    }, [prompts, searchQuery, activeView, selectedTag, sourceFilter])
+
+    // Selection handlers
+    const handleSelect = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev)
+            if (next.has(id)) {
+                next.delete(id)
+            } else {
+                next.add(id)
+            }
+            return next
+        })
+    }, [])
+
+    const handleClearSelection = useCallback(() => {
+        setSelectedIds(new Set())
+        setSelectionMode(false)
+    }, [])
+
+    const handleToggleSelectionMode = useCallback(() => {
+        if (selectionMode) {
+            handleClearSelection()
+        } else {
+            setSelectionMode(true)
+        }
+    }, [selectionMode, handleClearSelection])
+
+    // Batch action handlers
+    const handleBatchDelete = useCallback(async () => {
+        for (const id of selectedIds) {
+            await deletePrompt(id)
+        }
+        handleClearSelection()
+    }, [selectedIds, deletePrompt, handleClearSelection])
+
+    const handleBatchAddTag = useCallback(async (tag: string) => {
+        for (const id of selectedIds) {
+            const prompt = prompts.find((p) => p.id === id)
+            if (prompt && !prompt.tags.includes(tag)) {
+                await updatePrompt({
+                    ...prompt,
+                    tags: [...prompt.tags, tag]
+                })
+            }
+        }
+    }, [selectedIds, prompts, updatePrompt])
+
+    const handleBatchExport = useCallback(() => {
+        const selectedPrompts = prompts.filter((p) => selectedIds.has(p.id))
+        const exportData = JSON.stringify(selectedPrompts, null, 2)
+        const blob = new Blob([exportData], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `prompts-export-${selectedIds.size}.json`
+        a.click()
+        URL.revokeObjectURL(url)
+    }, [prompts, selectedIds])
 
     const handleNewPrompt = () => {
         setIsModalOpen(true)
@@ -105,6 +187,8 @@ export default function App() {
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     activeView={activeView}
                     onViewChange={handleViewChange}
+                    sourceFilter={sourceFilter}
+                    onSourceFilterChange={setSourceFilter}
                 />
 
                 {/* Main Content */}
@@ -112,21 +196,35 @@ export default function App() {
                     {/* Header */}
                     <header className="border-b border-border p-4">
                         <div className="mb-4">
-                            <div className="flex items-center gap-2">
-                                {activeView === 'collections' && selectedTag && (
-                                    <button
-                                        onClick={() => setSelectedTag(null)}
-                                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                    >
-                                        <ArrowLeft className="h-4 w-4" />
-                                    </button>
-                                )}
-                                <h1 className="text-xl font-semibold text-foreground">
-                                    {activeView === 'all' && 'All Prompts'}
-                                    {activeView === 'favorites' && 'Favorites'}
-                                    {activeView === 'collections' && !selectedTag && 'Collections'}
-                                    {activeView === 'collections' && selectedTag && `#${selectedTag}`}
-                                </h1>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    {activeView === 'collections' && selectedTag && (
+                                        <button
+                                            onClick={() => setSelectedTag(null)}
+                                            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                        >
+                                            <ArrowLeft className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                    <h1 className="text-xl font-semibold text-foreground">
+                                        {activeView === 'all' && 'All Prompts'}
+                                        {activeView === 'favorites' && 'Favorites'}
+                                        {activeView === 'mostUsed' && 'Most Used'}
+                                        {activeView === 'collections' && !selectedTag && 'Collections'}
+                                        {activeView === 'collections' && selectedTag && `#${selectedTag}`}
+                                    </h1>
+                                </div>
+                                {/* Selection Mode Toggle */}
+                                <button
+                                    onClick={handleToggleSelectionMode}
+                                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${selectionMode
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                        }`}
+                                >
+                                    {selectionMode ? <X className="h-4 w-4" /> : <CheckSquare className="h-4 w-4" />}
+                                    {selectionMode ? 'Cancel' : 'Select'}
+                                </button>
                             </div>
                             <p className="text-sm text-muted-foreground">
                                 {activeView === 'collections' && !selectedTag
@@ -134,6 +232,7 @@ export default function App() {
                                     : `${filteredPrompts.length} prompt${filteredPrompts.length !== 1 ? 's' : ''}`}
                                 {activeView === 'favorites' && ' marked as favorite'}
                                 {activeView === 'all' && ' in your collection'}
+                                {activeView === 'mostUsed' && ' sorted by usage'}
                                 {activeView === 'collections' && selectedTag && ` with #${selectedTag}`}
                             </p>
                         </div>
@@ -164,7 +263,7 @@ export default function App() {
                                         <button
                                             key={tag}
                                             onClick={() => setSelectedTag(tag)}
-                                            className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5"
+                                            className={`group flex items-center gap-3 border border-border bg-card p-4 text-left hover:border-primary/50 ${cardStyleClass}`}
                                         >
                                             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-accent/20">
                                                 <Tag className="h-5 w-5 text-primary" />
@@ -192,6 +291,10 @@ export default function App() {
                                         onUpdate={(title, content, tags, description) =>
                                             handleUpdatePrompt(prompt.id, title, content, tags, description)
                                         }
+                                        onCopied={() => incrementCopyCount(prompt.id)}
+                                        selectionMode={selectionMode}
+                                        isSelected={selectedIds.has(prompt.id)}
+                                        onSelect={handleSelect}
                                     />
                                 ))}
                             </div>
@@ -199,6 +302,15 @@ export default function App() {
                     </div>
                 </main>
             </div>
+
+            {/* Batch Action Bar */}
+            <BatchActionBar
+                selectedCount={selectedIds.size}
+                onDelete={handleBatchDelete}
+                onAddTag={handleBatchAddTag}
+                onExport={handleBatchExport}
+                onClearSelection={handleClearSelection}
+            />
 
             {/* New Prompt Modal */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="New Prompt">

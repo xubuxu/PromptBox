@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Download, Upload, Loader2, CheckCircle2, XCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Download, Upload, Loader2, CheckCircle2, XCircle, Palette, Sparkles, Power } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface SettingsModalContentProps {
     onImportSuccess: () => void
@@ -18,6 +19,30 @@ interface StatusState {
 export function SettingsModalContent({ onImportSuccess }: SettingsModalContentProps) {
     const [exportStatus, setExportStatus] = useState<StatusState>({ type: 'idle', message: '' })
     const [importStatus, setImportStatus] = useState<StatusState>({ type: 'idle', message: '' })
+    const [autoLaunch, setAutoLaunch] = useState(false)
+    const [autoLaunchLoading, setAutoLaunchLoading] = useState(true)
+    const { uiStyle, setUiStyle } = useTheme()
+
+    // Load auto-launch setting on mount
+    useEffect(() => {
+        window.api.getAutoLaunch().then((enabled) => {
+            setAutoLaunch(enabled)
+            setAutoLaunchLoading(false)
+        })
+    }, [])
+
+    /**
+     * Toggle auto-launch setting
+     */
+    const handleAutoLaunchToggle = async () => {
+        setAutoLaunchLoading(true)
+        const newValue = !autoLaunch
+        const success = await window.api.setAutoLaunch(newValue)
+        if (success) {
+            setAutoLaunch(newValue)
+        }
+        setAutoLaunchLoading(false)
+    }
 
     /**
      * Handles exporting all prompts to a JSON file
@@ -62,6 +87,89 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
 
     return (
         <div className="space-y-6">
+            {/* Startup Section */}
+            <div>
+                <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Startup
+                </h3>
+                <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+                            <Power className="h-5 w-5 text-foreground" />
+                        </div>
+                        <div>
+                            <p className="font-medium text-foreground">Launch at startup</p>
+                            <p className="text-sm text-muted-foreground">
+                                Start PromptBox when you log in
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleAutoLaunchToggle}
+                        disabled={autoLaunchLoading}
+                        className={`relative h-6 w-11 rounded-full transition-colors ${autoLaunch ? 'bg-primary' : 'bg-secondary'
+                            } ${autoLaunchLoading ? 'opacity-50' : ''}`}
+                    >
+                        <span
+                            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${autoLaunch ? 'translate-x-5' : 'translate-x-0'
+                                }`}
+                        />
+                    </button>
+                </div>
+            </div>
+
+            {/* Appearance Section */}
+            <div>
+                <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    Appearance
+                </h3>
+                <div className="grid gap-3 sm:grid-cols-2">
+                    {/* Elevated Cards Option */}
+                    <button
+                        onClick={() => setUiStyle('elevated')}
+                        className={`group relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition-all ${uiStyle === 'elevated'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-card hover:border-primary/50'
+                            }`}
+                    >
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary shadow-lg">
+                            <Palette className="h-6 w-6 text-foreground" />
+                        </div>
+                        <div className="text-center">
+                            <p className="font-medium text-foreground">Elevated Cards</p>
+                            <p className="text-xs text-muted-foreground">Clean shadows & lift effects</p>
+                        </div>
+                        {uiStyle === 'elevated' && (
+                            <div className="absolute right-2 top-2">
+                                <CheckCircle2 className="h-5 w-5 text-primary" />
+                            </div>
+                        )}
+                    </button>
+
+                    {/* Gradient Accent Option */}
+                    <button
+                        onClick={() => setUiStyle('gradient')}
+                        className={`group relative flex flex-col items-center gap-3 rounded-xl border-2 p-4 transition-all ${uiStyle === 'gradient'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border bg-card hover:border-primary/50'
+                            }`}
+                    >
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+                            <Sparkles className="h-6 w-6 text-white" />
+                        </div>
+                        <div className="text-center">
+                            <p className="font-medium text-foreground">Gradient Accent</p>
+                            <p className="text-xs text-muted-foreground">Colorful borders & glows</p>
+                        </div>
+                        {uiStyle === 'gradient' && (
+                            <div className="absolute right-2 top-2">
+                                <CheckCircle2 className="h-5 w-5 text-primary" />
+                            </div>
+                        )}
+                    </button>
+                </div>
+            </div>
+
             {/* Data Management Section */}
             <div>
                 <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">

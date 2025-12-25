@@ -75,3 +75,141 @@
 .titlebar-no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* ============================================
+   UI Style: Elevated Cards (Default)
+   ============================================ */
+
+/* Card base styles for elevated style */
+[data-ui-style="elevated"] .card-elevated,
+:root:not([data-ui-style]) .card-elevated {
+  border-radius: 1rem;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+[data-ui-style="elevated"] .card-elevated:hover,
+:root:not([data-ui-style]) .card-elevated:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.12),
+    0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark theme adjustments for elevated */
+[data-theme="dark"][data-ui-style="elevated"] .card-elevated,
+[data-theme="dark"]:not([data-ui-style]) .card-elevated {
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"][data-ui-style="elevated"] .card-elevated:hover,
+[data-theme="dark"]:not([data-ui-style]) .card-elevated:hover {
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   UI Style: Gradient Accent
+   ============================================ */
+
+/* Card styles for gradient style */
+[data-ui-style="gradient"] .card-gradient {
+  border-radius: 0.75rem;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+[data-ui-style="gradient"] .card-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, transparent, transparent);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+[data-ui-style="gradient"] .card-gradient:hover::before {
+  background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+  opacity: 1;
+}
+
+[data-ui-style="gradient"] .card-gradient:hover {
+  box-shadow:
+    0 8px 32px rgba(99, 102, 241, 0.25),
+    0 4px 16px rgba(168, 85, 247, 0.15);
+}
+
+/* Gradient tags */
+[data-ui-style="gradient"] .tag-gradient {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+  color: #a78bfa;
+}
+
+[data-theme="light"][data-ui-style="gradient"] .tag-gradient {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12));
+  color: #7c3aed;
+}
+
+/* Gradient button hover effect */
+[data-ui-style="gradient"] .btn-gradient-hover {
+  position: relative;
+  overflow: hidden;
+}
+
+[data-ui-style="gradient"] .btn-gradient-hover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+[data-ui-style="gradient"] .btn-gradient-hover:hover::after {
+  left: 100%;
+}
+
+/* Variable badges with gradient */
+[data-ui-style="gradient"] .var-badge-gradient {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(168, 85, 247, 0.2));
+  color: #f472b6;
+}
+
+[data-theme="light"][data-ui-style="gradient"] .var-badge-gradient {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(168, 85, 247, 0.15));
+  color: #db2777;
+}
+
+/* ============================================
+   Toast Animations
+   ============================================ */
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

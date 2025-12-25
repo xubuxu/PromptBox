@@ -1,4 +1,4 @@
-import { app, BrowserWindow, globalShortcut } from 'electron'
+import { app, BrowserWindow, globalShortcut, Tray, Menu, nativeImage } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipcHandlers'
 
@@ -6,7 +6,9 @@ import { registerIpcHandlers } from './ipcHandlers'
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 
 let mainWindow: BrowserWindow | null = null
+let tray: Tray | null = null
 let registeredHotkey: string | null = null
+let isQuitting = false
 
 /**
  * Create the main application window
@@ -35,12 +37,66 @@ function createWindow(): void {
         mainWindow?.show()
     })
 
+    // Intercept close and hide to tray instead
+    mainWindow.on('close', (event) => {
+        if (!isQuitting) {
+            event.preventDefault()
+            mainWindow?.hide()
+        }
+    })
+
     // Load the renderer
     if (process.env.NODE_ENV === 'development') {
         mainWindow.loadURL('http://localhost:5173')
     } else {
         mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
     }
+}
+
+/**
+ * Create the system tray icon and menu
+ */
+function createTray(): void {
+    const iconPath = join(__dirname, '../../resources/icon.png')
+    const icon = nativeImage.createFromPath(iconPath)
+
+    // Resize icon for tray (16x16 on Windows)
+    const trayIcon = icon.resize({ width: 16, height: 16 })
+
+    tray = new Tray(trayIcon)
+    tray.setToolTip('PromptBox')
+
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: 'Show PromptBox',
+            click: () => {
+                mainWindow?.show()
+                mainWindow?.focus()
+            }
+        },
+        {
+            label: 'Hide',
+            click: () => {
+                mainWindow?.hide()
+            }
+        },
+        { type: 'separator' },
+        {
+            label: 'Quit',
+            click: () => {
+                isQuitting = true
+                app.quit()
+            }
+        }
+    ])
+
+    tray.setContextMenu(contextMenu)
+
+    // Double-click to show window
+    tray.on('double-click', () => {
+        mainWindow?.show()
+        mainWindow?.focus()
+    })
 }
 
 /**
@@ -86,6 +142,7 @@ function registerGlobalHotkey(): void {
 app.whenReady().then(() => {
     registerIpcHandlers()
     createWindow()
+    createTray()
     registerGlobalHotkey()
 
     app.on('activate', () => {
@@ -96,9 +153,15 @@ app.whenReady().then(() => {
     })
 })
 
+// Allow quitting via tray menu
+app.on('before-quit', () => {
+    isQuitting = true
+})
+
 app.on('window-all-closed', () => {
-    // macOS: keep app running in background
-    if (process.platform !== 'darwin') {
+    // Don't quit when all windows are closed - stay in tray
+    // Only quit on macOS if explicitly requested
+    if (process.platform === 'darwin' && isQuitting) {
         app.quit()
     }
 })
@@ -106,4 +169,10 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
     // Unregister all shortcuts when quitting
     globalShortcut.unregisterAll()
+
+    // Destroy tray
+    if (tray) {
+        tray.destroy()
+        tray = null
+    }
 })
