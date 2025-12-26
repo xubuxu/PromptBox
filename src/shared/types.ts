@@ -13,8 +13,10 @@ export interface Prompt {
     title: string;
     /** Optional one-line description of the prompt's purpose */
     description?: string;
-    /** The actual prompt text, may contain {{variables}} */
+    /** The actual prompt text (English/default), may contain {{variables}} */
     content: string;
+    /** Optional Chinese version of the prompt content */
+    content_zh?: string;
     /** Array of tag strings */
     tags: string[];
     /** Whether the prompt is marked as favorite */

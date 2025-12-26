@@ -40,6 +40,7 @@ export function initDatabase(): void {
             title TEXT NOT NULL,
             description TEXT,
             content TEXT NOT NULL,
+            content_zh TEXT,
             tags TEXT NOT NULL DEFAULT '[]',
             isFavorite INTEGER NOT NULL DEFAULT 0,
             copyCount INTEGER NOT NULL DEFAULT 0,
@@ -55,11 +56,21 @@ export function initDatabase(): void {
         // Column already exists, ignore error
     }
 
+    // Add content_zh column if not exists (for bilingual support)
+    try {
+        db.exec('ALTER TABLE prompts ADD COLUMN content_zh TEXT')
+    } catch {
+        // Column already exists, ignore error
+    }
+
     // Migrate from old JSON file if exists
     migrateFromJson()
 
     // Import default prompts if database is empty
     importDefaultPrompts()
+
+    // Ensure Prompt Engineer template exists (even in existing databases)
+    ensurePromptEngineerExists()
 }
 
 /**
@@ -82,8 +93,8 @@ function migrateFromJson(): void {
         if (!Array.isArray(prompts)) return
 
         const insert = db.prepare(`
-            INSERT OR REPLACE INTO prompts (id, title, description, content, tags, isFavorite, copyCount, createdAt, updatedAt)
-            VALUES (@id, @title, @description, @content, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
+            INSERT OR REPLACE INTO prompts (id, title, description, content, content_zh, tags, isFavorite, copyCount, createdAt, updatedAt)
+            VALUES (@id, @title, @description, @content, @content_zh, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
         `)
 
         const insertMany = db.transaction((items: Prompt[]) => {
@@ -93,6 +104,7 @@ function migrateFromJson(): void {
                     title: prompt.title,
                     description: prompt.description || null,
                     content: prompt.content,
+                    content_zh: prompt.content_zh || null,
                     tags: JSON.stringify(prompt.tags),
                     isFavorite: prompt.isFavorite ? 1 : 0,
                     copyCount: prompt.copyCount || 0,
@@ -124,8 +136,8 @@ function importDefaultPrompts(): void {
 
     try {
         const insert = db.prepare(`
-            INSERT OR IGNORE INTO prompts (id, title, description, content, tags, isFavorite, copyCount, createdAt, updatedAt)
-            VALUES (@id, @title, @description, @content, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
+            INSERT OR IGNORE INTO prompts (id, title, description, content, content_zh, tags, isFavorite, copyCount, createdAt, updatedAt)
+            VALUES (@id, @title, @description, @content, @content_zh, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
         `)
 
         const insertMany = db.transaction((items: Prompt[]) => {
@@ -135,6 +147,7 @@ function importDefaultPrompts(): void {
                     title: prompt.title,
                     description: prompt.description || null,
                     content: prompt.content,
+                    content_zh: prompt.content_zh || null,
                     tags: JSON.stringify(prompt.tags),
                     isFavorite: prompt.isFavorite ? 1 : 0,
                     copyCount: 0,
@@ -152,6 +165,47 @@ function importDefaultPrompts(): void {
 }
 
 /**
+ * Ensure Prompt Engineer template exists in database (for existing databases)
+ */
+function ensurePromptEngineerExists(): void {
+    if (!db) return
+
+    const PROMPT_ENGINEER_ID = 'default-prompt-engineer'
+
+    // Check if already exists
+    const existing = db.prepare('SELECT id FROM prompts WHERE id = ?').get(PROMPT_ENGINEER_ID)
+    if (existing) return
+
+    // Find in DEFAULT_PROMPTS
+    const promptEngineer = DEFAULT_PROMPTS.find(p => p.id === PROMPT_ENGINEER_ID)
+    if (!promptEngineer) return
+
+    try {
+        const stmt = db.prepare(`
+            INSERT INTO prompts (id, title, description, content, content_zh, tags, isFavorite, copyCount, createdAt, updatedAt)
+            VALUES (@id, @title, @description, @content, @content_zh, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
+        `)
+
+        stmt.run({
+            id: promptEngineer.id,
+            title: promptEngineer.title,
+            description: promptEngineer.description || null,
+            content: promptEngineer.content,
+            content_zh: promptEngineer.content_zh || null,
+            tags: JSON.stringify(promptEngineer.tags),
+            isFavorite: promptEngineer.isFavorite ? 1 : 0,
+            copyCount: 0,
+            createdAt: promptEngineer.createdAt,
+            updatedAt: promptEngineer.updatedAt
+        })
+
+        console.log('Added Prompt Engineer template to existing database')
+    } catch (error) {
+        console.error('Failed to add Prompt Engineer:', error)
+    }
+}
+
+/**
  * Get all prompts from database
  */
 export function getAllPrompts(): Prompt[] {
@@ -162,6 +216,7 @@ export function getAllPrompts(): Prompt[] {
         title: string
         description: string | null
         content: string
+        content_zh: string | null
         tags: string
         isFavorite: number
         copyCount: number
@@ -174,6 +229,7 @@ export function getAllPrompts(): Prompt[] {
         title: row.title,
         description: row.description || undefined,
         content: row.content,
+        content_zh: row.content_zh || undefined,
         tags: JSON.parse(row.tags),
         isFavorite: row.isFavorite === 1,
         copyCount: row.copyCount,
@@ -190,8 +246,8 @@ export function savePrompt(prompt: Prompt): boolean {
 
     try {
         const stmt = db!.prepare(`
-            INSERT OR REPLACE INTO prompts (id, title, description, content, tags, isFavorite, copyCount, createdAt, updatedAt)
-            VALUES (@id, @title, @description, @content, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
+            INSERT OR REPLACE INTO prompts (id, title, description, content, content_zh, tags, isFavorite, copyCount, createdAt, updatedAt)
+            VALUES (@id, @title, @description, @content, @content_zh, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
         `)
 
         stmt.run({
@@ -199,6 +255,7 @@ export function savePrompt(prompt: Prompt): boolean {
             title: prompt.title,
             description: prompt.description || null,
             content: prompt.content,
+            content_zh: prompt.content_zh || null,
             tags: JSON.stringify(prompt.tags),
             isFavorite: prompt.isFavorite ? 1 : 0,
             copyCount: prompt.copyCount || 0,

@@ -8,6 +8,75 @@ import type { Prompt } from '@shared/types';
 
 export const DEFAULT_PROMPTS: Prompt[] = [
   {
+    "id": "default-prompt-engineer",
+    "title": "Prompt Engineering Expert",
+    "description": "Evaluate, polish prompts and generate PromptBox importable format",
+    "content": `You are a prompt engineering expert. Please help me with the following tasks:
+
+1. **Evaluate** the prompt I provide, pointing out its strengths and weaknesses
+2. **Polish** and optimize the prompt to make it clearer and more effective
+3. **Output** the result in PromptBox-importable JSON format with **bilingual content** (English + Chinese)
+
+My prompt is:
+"""
+{{prompt}}
+"""
+
+Please output the polished result in this JSON format:
+\`\`\`json
+{
+  "version": "1.0",
+  "prompts": [{
+    "id": "[generate a UUID]",
+    "title": "[short title in English]",
+    "description": "[one-line purpose description]",
+    "content": "[polished prompt in English, use {{variable}} format for variables]",
+    "content_zh": "[polished prompt in Chinese, use {{变量名}} format for variables]",
+    "tags": ["suggested tags"],
+    "isFavorite": false,
+    "createdAt": [current timestamp],
+    "updatedAt": [current timestamp]
+  }]
+}
+\`\`\``,
+    "content_zh": `你是一个提示词工程专家。请帮我完成以下任务：
+
+1. **评估**我提供的提示词，指出其优点和缺点
+2. **润色**优化这个提示词，使其更清晰、更有效
+3. **输出**为 PromptBox 可导入的 JSON 格式，包含**中英双语内容**
+
+我的提示词是：
+"""
+{{prompt}}
+"""
+
+请按以下 JSON 格式输出润色后的结果：
+\`\`\`json
+{
+  "version": "1.0",
+  "prompts": [{
+    "id": "[生成一个UUID]",
+    "title": "[英文简短标题]",
+    "description": "[一句话描述用途]",
+    "content": "[润色后的英文提示词，变量用 {{variable}} 格式]",
+    "content_zh": "[润色后的中文提示词，变量用 {{变量名}} 格式]",
+    "tags": ["建议的标签"],
+    "isFavorite": false,
+    "createdAt": [当前时间戳],
+    "updatedAt": [当前时间戳]
+  }]
+}
+\`\`\``,
+    "tags": [
+      "AI",
+      "Utility",
+      "Meta"
+    ],
+    "isFavorite": true,
+    "createdAt": 1766667675100,
+    "updatedAt": 1766667675100
+  },
+  {
     "id": "default-c417cc3b",
     "title": "Ethereum Developer",
     "description": "Act as Experienced Ethereum developer tasked with creating a smart contract for a blockchain messenger",

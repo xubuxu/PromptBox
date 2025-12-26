@@ -1,11 +1,12 @@
-import { useState, useCallback } from 'react'
-import { Star, Copy, Trash2, Pencil, Check } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { Star, Copy, Trash2, Pencil, Check, Globe } from 'lucide-react'
 import { Prompt } from '@shared/types'
 import { PromptEditor } from './PromptEditor'
 import { Toast } from './Toast'
 import { ConfirmDialog } from './ConfirmDialog'
 import { VariableInputModal } from './VariableInputModal'
 import { useTheme } from '../contexts/ThemeContext'
+import { getTagColor, sortTags } from '../utils/tagColors'
 
 interface PromptCardProps {
     prompt: Prompt
@@ -43,23 +44,36 @@ export function PromptCard({
     const [showVariableModal, setShowVariableModal] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-    const { uiStyle } = useTheme()
+    const [currentLang, setCurrentLang] = useState<'en' | 'zh'>('zh')
+    const { theme, uiStyle } = useTheme()
 
     const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
         setToast({ message, type })
     }, [])
 
+    // Get current content based on language selection (for display)
+    const displayContent = useMemo(() => {
+        if (currentLang === 'zh' && prompt.content_zh) {
+            return prompt.content_zh
+        }
+        return prompt.content
+    }, [currentLang, prompt.content, prompt.content_zh])
+
+    // Get content for copying (always English)
+    const copyContent = prompt.content
+
     const handleCopy = useCallback(() => {
         // If content has variables, open the variable input modal
-        if (hasVariables(prompt.content)) {
+        // Always copy English version
+        if (hasVariables(copyContent)) {
             setShowVariableModal(true)
         } else {
-            // No variables, copy directly
-            navigator.clipboard.writeText(prompt.content)
+            // No variables, copy directly (English version)
+            navigator.clipboard.writeText(copyContent)
             showToast('Copied to clipboard!')
             onCopied?.()
         }
-    }, [prompt.content, showToast, onCopied])
+    }, [copyContent, showToast, onCopied])
 
     const handleVariableCopy = useCallback((filledContent: string) => {
         navigator.clipboard.writeText(filledContent)
@@ -81,13 +95,18 @@ export function PromptCard({
         setShowDeleteConfirm(false)
     }
 
-    // Extract variables from content for display
-    const variableMatches = prompt.content.match(/\{\{(.*?)\}\}/g) || []
-    const variables = variableMatches.map((v) => v.replace(/\{\{|\}\}/g, ''))
+    // Extract variables from display content for preview
+    const variableMatches = displayContent.match(/\{\{(.*?)\}\}/g) || []
+    const variables = variableMatches.map((v: string) => v.replace(/\{\{|\}\}/g, ''))
+
+    // Check if bilingual content is available
+    const hasBilingual = !!prompt.content_zh
+
+    // Sort tags alphabetically
+    const sortedTags = useMemo(() => sortTags(prompt.tags), [prompt.tags])
 
     // Dynamic card class based on UI style
     const cardStyleClass = uiStyle === 'gradient' ? 'card-gradient' : 'card-elevated'
-    const tagStyleClass = uiStyle === 'gradient' ? 'tag-gradient' : ''
     const varBadgeClass = uiStyle === 'gradient' ? 'var-badge-gradient' : ''
     const btnHoverClass = uiStyle === 'gradient' ? 'btn-gradient-hover' : ''
 
@@ -135,26 +154,39 @@ export function PromptCard({
                 {/* Header */}
                 <div className="mb-2 flex items-start justify-between">
                     <h3 className="font-medium text-foreground">{prompt.title}</h3>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${prompt.isFavorite
-                            ? 'text-yellow-400'
-                            : 'text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-yellow-400'
-                            }`}
-                    >
-                        <Star className={`h-4 w-4 ${prompt.isFavorite ? 'fill-current' : ''}`} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        {/* Language Toggle */}
+                        {hasBilingual && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setCurrentLang(currentLang === 'en' ? 'zh' : 'en') }}
+                                className="flex h-7 items-center gap-1 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                title={currentLang === 'en' ? 'Switch to Chinese' : 'Switch to English'}
+                            >
+                                <Globe className="h-3.5 w-3.5" />
+                                <span>{currentLang === 'en' ? 'EN' : '中'}</span>
+                            </button>
+                        )}
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
+                            className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${prompt.isFavorite
+                                ? 'text-yellow-400'
+                                : 'text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-yellow-400'
+                                }`}
+                        >
+                            <Star className={`h-4 w-4 ${prompt.isFavorite ? 'fill-current' : ''}`} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Description or Content Preview */}
                 <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                    {prompt.description || prompt.content}
+                    {prompt.description || displayContent}
                 </p>
 
                 {/* Variables */}
                 {variables.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-1">
-                        {variables.map((variable, index) => (
+                        {variables.map((variable: string, index: number) => (
                             <span
                                 key={index}
                                 className={`rounded-md px-2 py-0.5 text-xs ${varBadgeClass || 'bg-accent/20 text-accent'}`}
@@ -166,16 +198,25 @@ export function PromptCard({
                 )}
 
                 {/* Tags */}
-                {prompt.tags.length > 0 && (
+                {sortedTags.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-1">
-                        {prompt.tags.map((tag) => (
-                            <span
-                                key={tag}
-                                className={`rounded-md px-2 py-0.5 text-xs ${tagStyleClass || 'bg-secondary text-muted-foreground'}`}
-                            >
-                                #{tag}
-                            </span>
-                        ))}
+                        {sortedTags.map((tag) => {
+                            const colors = getTagColor(tag)
+                            return (
+                                <span
+                                    key={tag}
+                                    className="rounded-md px-2 py-0.5 text-xs font-medium transition-colors"
+                                    style={{
+                                        backgroundColor: colors.bg,
+                                        color: theme === 'dark'
+                                            ? colors.darkText
+                                            : colors.text
+                                    }}
+                                >
+                                    #{tag}
+                                </span>
+                            )
+                        })}
                     </div>
                 )}
 
@@ -205,10 +246,10 @@ export function PromptCard({
                 </div>
             </div>
 
-            {/* Variable Input Modal */}
+            {/* Variable Input Modal - uses English content for copying */}
             <VariableInputModal
                 isOpen={showVariableModal}
-                content={prompt.content}
+                content={copyContent}
                 promptTitle={prompt.title}
                 promptId={prompt.id}
                 onClose={() => setShowVariableModal(false)}
