@@ -150,10 +150,28 @@ export function registerIpcHandlers(): void {
 
     // --- Window Control Handlers ---
 
+    // Hide Window (Close button behavior - hide to tray)
+    ipcMain.on(IPC_CHANNELS.HIDE_WINDOW, () => {
+        const win = getMainWindow()
+        if (win) win.hide()
+    })
+
     // Minimize Window
     ipcMain.on(IPC_CHANNELS.MINIMIZE_WINDOW, () => {
         const win = getMainWindow()
         if (win) win.minimize()
+    })
+
+    // Maximize Window (toggle maximize/restore)
+    ipcMain.on(IPC_CHANNELS.MAXIMIZE_WINDOW, () => {
+        const win = getMainWindow()
+        if (win) {
+            if (win.isMaximized()) {
+                win.unmaximize()
+            } else {
+                win.maximize()
+            }
+        }
     })
 
     // Close Window (Hide to Tray/Quit - standard close behavior)

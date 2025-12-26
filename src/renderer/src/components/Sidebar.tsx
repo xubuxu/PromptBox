@@ -90,7 +90,7 @@ export function Sidebar({
     }
 
     return (
-        <aside className="flex h-full w-56 flex-col border-r border-border bg-card">
+        <aside className="sidebar-gradient flex h-full w-56 flex-col border-r border-border/50">
             {/* New Prompt Button */}
             <div className="p-3 space-y-2">
                 <button

@@ -128,7 +128,7 @@ function PromptCardComponent({
     return (
         <>
             <div
-                className={`group relative border bg-card p-4 hover:border-primary/50 ${cardStyleClass} ${isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
+                className={`group relative flex h-[220px] flex-col border bg-card p-4 hover:border-primary/50 ${cardStyleClass} ${isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
                     } ${selectionMode ? 'cursor-pointer' : ''}`}
                 onClick={handleCardClick}
             >
@@ -148,8 +148,8 @@ function PromptCardComponent({
 
                 {/* Header */}
                 <div className="mb-2 flex items-start justify-between">
-                    <h3 className="font-medium text-foreground">{prompt.title}</h3>
-                    <div className="flex items-center gap-1">
+                    <h3 className="font-medium text-foreground line-clamp-1">{prompt.title}</h3>
+                    <div className="flex items-center gap-1 shrink-0">
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
                             className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${prompt.isFavorite
@@ -162,61 +162,61 @@ function PromptCardComponent({
                     </div>
                 </div>
 
-                {/* Description or Content Preview */}
-                <div className="mb-3 max-h-[4.5rem] overflow-hidden text-sm text-muted-foreground mask-linear-fade">
-                    <div className="mb-3 max-h-[4.5rem] overflow-hidden text-sm text-muted-foreground mask-linear-fade">
-                        <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                                p: ({ children }: { children?: React.ReactNode }) => <p className="mb-1 last:mb-0">{children}</p>,
-                                a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
-                                    <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                {/* Description or Content Preview - Fixed height */}
+                <div className="mb-3 h-[3rem] overflow-hidden text-sm text-muted-foreground mask-linear-fade">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            p: ({ children }: { children?: React.ReactNode }) => <p className="mb-1 last:mb-0">{children}</p>,
+                            a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+                                <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                    {children}
+                                </a>
+                            ),
+                            code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => {
+                                const isInline = !className?.includes('language-') && !String(children).includes('\n')
+                                return (
+                                    <code className={`${isInline ? 'rounded bg-muted px-1 py-0.5 font-mono text-xs' : 'block w-full overflow-x-auto rounded bg-muted p-2 font-mono text-xs'}`} {...props}>
                                         {children}
-                                    </a>
-                                ),
-                                code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => {
-                                    const isInline = !className?.includes('language-') && !String(children).includes('\n')
-                                    return (
-                                        <code className={`${isInline ? 'rounded bg-muted px-1 py-0.5 font-mono text-xs' : 'block w-full overflow-x-auto rounded bg-muted p-2 font-mono text-xs'}`} {...props}>
-                                            {children}
-                                        </code>
-                                    )
-                                },
-                                ul: ({ children }: { children?: React.ReactNode }) => <ul className="ml-4 list-disc space-y-0.5">{children}</ul>,
-                                ol: ({ children }: { children?: React.ReactNode }) => <ol className="ml-4 list-decimal space-y-0.5">{children}</ol>,
-                                blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-primary/50 pl-2 italic">{children}</blockquote>
-                            }}
-                        >
-                            {prompt.description || displayContent}
-                        </ReactMarkdown>
-                    </div>
+                                    </code>
+                                )
+                            },
+                            ul: ({ children }: { children?: React.ReactNode }) => <ul className="ml-4 list-disc space-y-0.5">{children}</ul>,
+                            ol: ({ children }: { children?: React.ReactNode }) => <ol className="ml-4 list-decimal space-y-0.5">{children}</ol>,
+                            blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-primary/50 pl-2 italic">{children}</blockquote>
+                        }}
+                    >
+                        {prompt.description || displayContent}
+                    </ReactMarkdown>
                 </div>
 
-                {/* Variables */}
-                {variables.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-1">
-                        {variables.map((variable: string, index: number) => (
-                            <span
-                                key={index}
-                                className={`rounded-md px-2 py-0.5 text-xs ${varBadgeClass || 'bg-accent/20 text-accent'}`}
-                            >
-                                {variable}
-                            </span>
-                        ))}
-                    </div>
-                )}
+                {/* Tags & Variables Container - Fixed height, takes remaining space */}
+                <div className="flex-1 min-h-0">
+                    {/* Variables */}
+                    {variables.length > 0 && (
+                        <div className="mb-2 flex flex-wrap gap-1 h-[1.5rem] overflow-hidden">
+                            {variables.map((variable: string, index: number) => (
+                                <span
+                                    key={index}
+                                    className={`rounded-md px-2 py-0.5 text-xs ${varBadgeClass || 'bg-accent/20 text-accent'}`}
+                                >
+                                    {variable}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
-                {/* Tags */}
-                {sortedTags.length > 0 && (
-                    <div className="mb-3 flex flex-wrap gap-1">
-                        {sortedTags.map((tag) => {
+                    {/* Tags - Limited to 3 visible */}
+                    <div className="flex items-center gap-1.5">
+                        {sortedTags.slice(0, 3).map((tag) => {
                             const colors = getTagColor(tag)
                             return (
                                 <span
                                     key={tag}
-                                    className="rounded-md px-2 py-0.5 text-xs font-medium transition-colors"
+                                    className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
                                     style={{
                                         backgroundColor: colors.bg,
+                                        borderColor: colors.border,
                                         color: theme === 'dark'
                                             ? colors.darkText
                                             : colors.text
@@ -226,11 +226,16 @@ function PromptCardComponent({
                                 </span>
                             )
                         })}
+                        {sortedTags.length > 3 && (
+                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                +{sortedTags.length - 3}
+                            </span>
+                        )}
                     </div>
-                )}
+                </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                {/* Actions - Always at bottom */}
+                <div className="flex items-center gap-1 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                         onClick={(e) => { e.stopPropagation(); handleCopy() }}
                         className={`flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground ${btnHoverClass}`}

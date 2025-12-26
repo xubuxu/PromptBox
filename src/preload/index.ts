@@ -37,6 +37,14 @@ const api: IElectronAPI = {
         ipcRenderer.send(IPC_CHANNELS.HIDE_WINDOW)
     },
 
+    minimizeWindow: (): void => {
+        ipcRenderer.send(IPC_CHANNELS.MINIMIZE_WINDOW)
+    },
+
+    maximizeWindow: (): void => {
+        ipcRenderer.send(IPC_CHANNELS.MAXIMIZE_WINDOW)
+    },
+
     // Auto Launch
     getAutoLaunch: (): Promise<boolean> => {
         return ipcRenderer.invoke(IPC_CHANNELS.GET_AUTO_LAUNCH)

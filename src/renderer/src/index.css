@@ -27,63 +27,63 @@
 
 @layer base {
 
-  /* Dark theme (default) */
+  /* Dark theme (default) - Deep blue-black for modern look */
   :root,
   :root[data-theme="dark"] {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 210 100% 52%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 213 31% 91%;
 
-    --muted: 217 33% 17%;
+    --muted: 215 28% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 210 100% 52%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 224 76% 48%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 210 100% 52%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 224 71% 6%;
+    --card-foreground: 213 31% 91%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
-  /* Light theme */
+  /* Light theme - Clean whites with subtle blue tint */
   :root[data-theme="light"] {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --background: 210 40% 98%;
+    --foreground: 224 71% 4%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 214 32% 94%;
+    --secondary-foreground: 224 71% 4%;
 
-    --muted: 210 40% 96.1%;
+    --muted: 214 32% 94%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 210 100% 50%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 210 100% 50%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 71% 4%;
   }
 
   * {
@@ -126,37 +126,47 @@
    UI Style: Elevated Cards (Default)
    ============================================ */
 
-/* Card base styles for elevated style */
+/* Card base styles for elevated style - Light theme */
 [data-ui-style="elevated"] .card-elevated,
 :root:not([data-ui-style]) .card-elevated {
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    0 4px 12px rgba(0, 0, 0, 0.04);
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 8px rgba(0, 0, 0, 0.04),
+    0 8px 16px rgba(0, 0, 0, 0.04);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 [data-ui-style="elevated"] .card-elevated:hover,
 :root:not([data-ui-style]) .card-elevated:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.12),
-    0 12px 32px rgba(0, 0, 0, 0.08);
+    0 4px 8px rgba(0, 0, 0, 0.06),
+    0 8px 16px rgba(0, 0, 0, 0.06),
+    0 16px 32px rgba(0, 0, 0, 0.06);
 }
 
-/* Dark theme adjustments for elevated */
+/* Dark theme - Glassmorphism effect */
 [data-theme="dark"][data-ui-style="elevated"] .card-elevated,
 [data-theme="dark"]:not([data-ui-style]) .card-elevated {
+  background: linear-gradient(135deg,
+      rgba(30, 41, 59, 0.8) 0%,
+      rgba(15, 23, 42, 0.9) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.3),
-    0 4px 12px rgba(0, 0, 0, 0.2);
+    0 4px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 [data-theme="dark"][data-ui-style="elevated"] .card-elevated:hover,
 [data-theme="dark"]:not([data-ui-style]) .card-elevated:hover {
+  border-color: rgba(59, 130, 246, 0.4);
   box-shadow:
-    0 4px 12px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.3);
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* ============================================
@@ -258,4 +268,36 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* ============================================
+   Sidebar Gradient
+   ============================================ */
+
+/* Light theme - Clean white sidebar */
+.sidebar-gradient {
+  background: linear-gradient(180deg,
+      hsl(0 0% 100%) 0%,
+      hsl(210 40% 98%) 100%);
+}
+
+/* Dark theme - Rich blue-purple gradient */
+[data-theme="dark"] .sidebar-gradient {
+  background: linear-gradient(180deg,
+      hsl(224 71% 8%) 0%,
+      hsl(250 50% 8%) 100%);
+}
+
+/* ============================================
+   Search Bar Enhancement
+   ============================================ */
+
+/* Search input focus glow */
+.search-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: hsl(210 100% 50%);
+}
+
+[data-theme="dark"] .search-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }

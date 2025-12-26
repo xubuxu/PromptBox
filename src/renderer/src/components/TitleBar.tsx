@@ -1,4 +1,4 @@
-import { Minus, X, Pin, Sun, Moon } from 'lucide-react'
+import { Minus, X, Pin, Sun, Moon, Square } from 'lucide-react'
 import { useState } from 'react'
 import { useTheme } from '../contexts/ThemeContext'
 
@@ -14,7 +14,11 @@ export function TitleBar() {
     }
 
     const handleMinimize = () => {
-        window.api.hideWindow()
+        window.api.minimizeWindow()
+    }
+
+    const handleMaximize = () => {
+        window.api.maximizeWindow()
     }
 
     const handleTogglePin = async () => {
@@ -58,6 +62,15 @@ export function TitleBar() {
                     title="Minimize"
                 >
                     <Minus className="h-4 w-4" />
+                </button>
+
+                {/* Maximize */}
+                <button
+                    onClick={handleMaximize}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary"
+                    title="Maximize"
+                >
+                    <Square className="h-3.5 w-3.5" />
                 </button>
 
                 {/* Close */}

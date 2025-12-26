@@ -48,6 +48,8 @@ export interface IElectronAPI {
     // Window Controls
     toggleAlwaysOnTop: () => Promise<boolean>;
     hideWindow: () => void;
+    minimizeWindow: () => void;
+    maximizeWindow: () => void;
 
     // Auto Launch
     getAutoLaunch: () => Promise<boolean>;
@@ -83,6 +85,7 @@ export const IPC_CHANNELS = {
     INCREMENT_COPY_COUNT: 'prompts:incrementCopyCount',
     TOGGLE_FAVORITE: 'prompts:toggleFavorite',
     MINIMIZE_WINDOW: 'window:minimize',
+    MAXIMIZE_WINDOW: 'window:maximize',
     CLOSE_WINDOW: 'window:close',
 
     // Folder Operations
