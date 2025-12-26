@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useDeferredValue, forwardRef } from 'react'
 import { VirtuosoGrid } from 'react-virtuoso'
-import { TitleBar, Sidebar, PromptCard, SearchBar, PromptEditor, Modal, SettingsModalContent, BatchActionBar } from './components'
+import { TitleBar, Sidebar, PromptCard, SearchBar, PromptEditor, Modal, SettingsModalContent, BatchActionBar, Toast } from './components'
 import { ViewType, SourceFilter } from './components/Sidebar'
 import { usePrompts } from './hooks/usePrompts'
 import { useFolders } from './hooks/useFolders'
@@ -211,6 +211,13 @@ export default function App() {
         }
     }, [prompts, updatePrompt])
 
+    // Toast state
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+    const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+        setToast({ message, type })
+    }, [])
+
     /**
      * Handle import from sidebar - calls IPC import and refreshes list
      */
@@ -219,9 +226,13 @@ export default function App() {
             const result = await window.api.importData()
             if (result.includes('successfully')) {
                 fetchPrompts()
+                showToast(result, 'success')
+            } else if (result !== 'Import cancelled') {
+                showToast(result, 'error')
             }
         } catch (error) {
             console.error('Import failed:', error)
+            showToast('Import failed', 'error')
         }
     }
 
@@ -407,6 +418,14 @@ export default function App() {
             <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="Settings">
                 <SettingsModalContent onImportSuccess={() => window.location.reload()} />
             </Modal>
+
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
         </div>
     )
 }

@@ -21,6 +21,7 @@ interface ImportedPrompt {
     id: string
     title: string
     content: string
+    content_zh?: string // Add support for Chinese content
     tags: string[]
     createdAt?: number
     updatedAt?: number
@@ -120,14 +121,25 @@ export function registerIpcHandlers(): void {
 
             if (filePaths && filePaths.length > 0) {
                 const data = readFileSync(filePaths[0], 'utf-8')
-                const importedPrompts = JSON.parse(data) as ImportedPrompt[]
+                const parsedData = JSON.parse(data)
+
+                let promptsToImport: ImportedPrompt[] = []
+
+                if (Array.isArray(parsedData)) {
+                    promptsToImport = parsedData
+                } else if (typeof parsedData === 'object' && parsedData !== null && Array.isArray(parsedData.prompts)) {
+                    promptsToImport = parsedData.prompts
+                } else {
+                    return 'Import failed: Invalid file format (must be an array or object with "prompts" array)'
+                }
 
                 let successCount = 0
-                for (const p of importedPrompts) {
+                for (const p of promptsToImport) {
                     const newPrompt: Prompt = {
                         id: p.id || uuidv4(),
                         title: p.title || 'Untitled',
                         content: p.content || '',
+                        content_zh: p.content_zh, // Map Chinese content
                         tags: p.tags || [],
                         description: p.description, // Correctly mapping description
                         isFavorite: p.isFavorite || false,
