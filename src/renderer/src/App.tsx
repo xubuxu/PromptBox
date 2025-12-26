@@ -35,7 +35,7 @@ export default function App() {
     const [searchQuery, setSearchQuery] = useState('')
     // Defer the search query to avoid blocking UI during typing
     const deferredSearchQuery = useDeferredValue(searchQuery)
-    const [activeView, setActiveView] = useState<ViewType>('all')
+    const [activeView, setActiveView] = useState<ViewType>('favorites')
     const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
     const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
     const [selectedTag, setSelectedTag] = useState<string | null>(null)

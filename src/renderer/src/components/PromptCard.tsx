@@ -93,16 +93,21 @@ function PromptCardComponent({
 
     // Extract variables from display content for preview
     const variableMatches = displayContent.match(/\{\{(.*?)\}\}/g) || []
-    const variables = variableMatches.map((v: string) => v.replace(/\{\{|\}\}/g, ''))
-
-
+    // Deduplicate variables
+    const variables = Array.from(new Set(variableMatches.map((v: string) => v.replace(/\{\{|\}\}/g, ''))))
 
     // Sort tags alphabetically
     const sortedTags = useMemo(() => sortTags(prompt.tags), [prompt.tags])
 
     // Dynamic card class based on UI style
     const cardStyleClass = uiStyle === 'gradient' ? 'card-gradient' : 'card-elevated'
-    const varBadgeClass = uiStyle === 'gradient' ? 'var-badge-gradient' : ''
+
+    // Tech Style: Variables as neutral code snippets to reduce visual noise
+    // Using simple gray/muted colors to let Tags (the real categories) pop
+    const variableBadgeClass = uiStyle === 'gradient'
+        ? 'bg-secondary/40 text-muted-foreground border-white/5'
+        : 'bg-muted/80 text-muted-foreground border-border/60 hover:text-foreground hover:border-border'
+
     const btnHoverClass = uiStyle === 'gradient' ? 'btn-gradient-hover' : ''
 
     // Edit mode - show editor form
@@ -190,15 +195,16 @@ function PromptCardComponent({
                     </ReactMarkdown>
                 </div>
 
-                {/* Tags & Variables Container - Fixed height, takes remaining space */}
-                <div className="flex-1 min-h-0">
+                {/* Tags & Variables Container - Takes remaining space */}
+                <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
                     {/* Variables */}
                     {variables.length > 0 && (
-                        <div className="mb-2 flex flex-wrap gap-1 h-[1.5rem] overflow-hidden">
+                        <div className="flex flex-wrap gap-1.5 max-h-[1.6rem] overflow-hidden mask-linear-fade">
                             {variables.map((variable: string, index: number) => (
                                 <span
                                     key={index}
-                                    className={`rounded-md px-2 py-0.5 text-xs ${varBadgeClass || 'bg-accent/20 text-accent'}`}
+                                    className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-mono border transition-colors ${variableBadgeClass}`}
+                                    title={`Variable: ${variable}`}
                                 >
                                     {variable}
                                 </span>
@@ -206,32 +212,33 @@ function PromptCardComponent({
                         </div>
                     )}
 
-                    {/* Tags - Limited to 3 visible */}
-                    <div className="flex items-center gap-1.5">
-                        {sortedTags.slice(0, 3).map((tag) => {
-                            const colors = getTagColor(tag)
-                            return (
-                                <span
-                                    key={tag}
-                                    className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium"
-                                    style={{
-                                        backgroundColor: colors.bg,
-                                        borderColor: colors.border,
-                                        color: theme === 'dark'
-                                            ? colors.darkText
-                                            : colors.text
-                                    }}
-                                >
-                                    #{tag}
+                    {/* Tags */}
+                    {sortedTags.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 overflow-hidden">
+                            {sortedTags.slice(0, 6).map((tag) => {
+                                const colors = getTagColor(tag)
+                                const displayTag = tag.startsWith('#') ? tag : `#${tag}`
+                                return (
+                                    <span
+                                        key={tag}
+                                        className="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors"
+                                        style={{
+                                            backgroundColor: colors.bg,
+                                            borderColor: colors.border,
+                                            color: theme === 'dark' ? colors.darkText : colors.text
+                                        }}
+                                    >
+                                        {displayTag}
+                                    </span>
+                                )
+                            })}
+                            {sortedTags.length > 6 && (
+                                <span className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                    +{sortedTags.length - 6}
                                 </span>
-                            )
-                        })}
-                        {sortedTags.length > 3 && (
-                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                                +{sortedTags.length - 3}
-                            </span>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Actions - Always at bottom */}
