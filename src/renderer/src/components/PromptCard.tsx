@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, memo } from 'react'
 import { Star, Copy, Trash2, Pencil, Check } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { Prompt } from '@shared/types'
+import { Prompt, Folder } from '@shared/types'
 import { PromptEditor } from './PromptEditor'
 import { Toast } from './Toast'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -12,9 +12,10 @@ import { getTagColor, sortTags } from '../utils/tagColors'
 
 interface PromptCardProps {
     prompt: Prompt
+    folders?: Folder[]
     onToggleFavorite: () => void
     onDelete: () => void
-    onUpdate: (title: string, content: string, tags: string[], description?: string) => void
+    onUpdate: (title: string, content: string, tags: string[], description?: string, folderId?: string | null) => void
     onCopied?: () => void
     // Selection mode props
     selectionMode?: boolean
@@ -34,6 +35,7 @@ function hasVariables(content: string): boolean {
  */
 function PromptCardComponent({
     prompt,
+    folders = [],
     onToggleFavorite,
     onDelete,
     onUpdate,
@@ -59,15 +61,14 @@ function PromptCardComponent({
     const copyContent = prompt.content
 
     const handleCopy = useCallback(() => {
-        // If content has variables, open the variable input modal
-        // Always copy English version
+        // Always copy raw content immediately
+        navigator.clipboard.writeText(copyContent)
+        showToast('Copied to clipboard!')
+        onCopied?.()
+
+        // If content has variables, also open the variable input modal for optional filling
         if (hasVariables(copyContent)) {
             setShowVariableModal(true)
-        } else {
-            // No variables, copy directly (English version)
-            navigator.clipboard.writeText(copyContent)
-            showToast('Copied to clipboard!')
-            onCopied?.()
         }
     }, [copyContent, showToast, onCopied])
 
@@ -77,8 +78,8 @@ function PromptCardComponent({
         onCopied?.()
     }, [showToast, onCopied])
 
-    const handleSave = (title: string, content: string, tags: string[], description?: string) => {
-        onUpdate(title, content, tags, description)
+    const handleSave = (title: string, content: string, tags: string[], description?: string, folderId?: string | null) => {
+        onUpdate(title, content, tags, description, folderId)
         setIsEditing(false)
     }
 
@@ -116,6 +117,7 @@ function PromptCardComponent({
             <div className={`border border-primary bg-card p-4 ${cardStyleClass}`}>
                 <PromptEditor
                     prompt={prompt}
+                    folders={folders}
                     onSave={handleSave}
                     onCancel={() => setIsEditing(false)}
                 />

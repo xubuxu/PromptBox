@@ -98,47 +98,6 @@ export function BatchActionBar({
                     </div>
                 )}
 
-                {/* Move to Folder */}
-                {onMoveToFolder && (
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowFolderSelect(!showFolderSelect)}
-                            className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
-                        >
-                            <FolderInput className="h-4 w-4" />
-                            Move to...
-                        </button>
-
-                        {showFolderSelect && (
-                            <div className="absolute bottom-full left-0 mb-2 w-48 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg">
-                                <div className="max-h-60 overflow-y-auto p-1">
-                                    <button
-                                        onClick={() => {
-                                            onMoveToFolder(null)
-                                            setShowFolderSelect(false)
-                                        }}
-                                        className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                                    >
-                                        Root (No Folder)
-                                    </button>
-                                    {folders.map(folder => (
-                                        <button
-                                            key={folder.id}
-                                            onClick={() => {
-                                                onMoveToFolder(folder.id)
-                                                setShowFolderSelect(false)
-                                            }}
-                                            className="w-full truncate rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                                        >
-                                            {folder.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {/* Tag Input / Button */}
                 {showTagInput ? (
                     <div className="flex items-center gap-2">

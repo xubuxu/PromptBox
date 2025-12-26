@@ -31,7 +31,7 @@ export function usePrompts() {
      * Create a new prompt
      */
     const createPrompt = useCallback(
-        async (title: string, content: string, tags: string[] = [], description?: string) => {
+        async (title: string, content: string, tags: string[] = [], description?: string, folderId?: string | null) => {
             const newPrompt: Prompt = {
                 id: uuidv4(),
                 title,
@@ -39,6 +39,7 @@ export function usePrompts() {
                 content,
                 tags,
                 isFavorite: false,
+                folderId: folderId || null,
                 createdAt: Date.now(),
                 updatedAt: Date.now()
             }

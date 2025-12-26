@@ -1,21 +1,23 @@
 import { useState } from 'react'
-import { X, Save } from 'lucide-react'
-import { Prompt } from '@shared/types'
+import { X, Save, FolderOpen } from 'lucide-react'
+import { Prompt, Folder } from '@shared/types'
 
 interface PromptEditorProps {
     prompt?: Prompt
-    onSave: (title: string, content: string, tags: string[], description?: string) => void
+    folders?: Folder[]
+    onSave: (title: string, content: string, tags: string[], description?: string, folderId?: string | null) => void
     onCancel: () => void
 }
 
 /**
  * Editor form for creating/editing prompts
  */
-export function PromptEditor({ prompt, onSave, onCancel }: PromptEditorProps) {
+export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptEditorProps) {
     const [title, setTitle] = useState(prompt?.title || '')
     const [description, setDescription] = useState(prompt?.description || '')
     const [content, setContent] = useState(prompt?.content || '')
     const [tagInput, setTagInput] = useState(prompt?.tags.join(', ') || '')
+    const [selectedFolderId, setSelectedFolderId] = useState<string | null>(prompt?.folderId || null)
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -26,7 +28,7 @@ export function PromptEditor({ prompt, onSave, onCancel }: PromptEditorProps) {
             .map((t) => t.trim())
             .filter(Boolean)
 
-        onSave(title.trim(), content.trim(), tags, description.trim() || undefined)
+        onSave(title.trim(), content.trim(), tags, description.trim() || undefined, selectedFolderId)
     }
 
     return (
@@ -96,6 +98,33 @@ export function PromptEditor({ prompt, onSave, onCancel }: PromptEditorProps) {
                     className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
             </div>
+
+            {/* Folder Selection */}
+            {folders.length > 0 && (
+                <div>
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
+                        <span className="flex items-center gap-1.5">
+                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                            Folder
+                        </span>
+                        <span className="ml-5.5 text-xs text-muted-foreground">
+                            Optional, organize your prompts
+                        </span>
+                    </label>
+                    <select
+                        value={selectedFolderId || ''}
+                        onChange={(e) => setSelectedFolderId(e.target.value || null)}
+                        className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                        <option value="">No folder</option>
+                        {folders.map((folder) => (
+                            <option key={folder.id} value={folder.id}>
+                                {folder.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex items-center justify-end gap-2 pt-2">

@@ -182,12 +182,25 @@ export default function App() {
         URL.revokeObjectURL(url)
     }, [prompts, selectedIds])
 
+    const handleBatchMoveToFolder = useCallback(async (folderId: string | null) => {
+        for (const id of selectedIds) {
+            const prompt = prompts.find((p) => p.id === id)
+            if (prompt) {
+                await updatePrompt({
+                    ...prompt,
+                    folderId
+                })
+            }
+        }
+        handleClearSelection()
+    }, [selectedIds, prompts, updatePrompt, handleClearSelection])
+
     const handleNewPrompt = () => {
         setIsModalOpen(true)
     }
 
-    const handleCreatePrompt = async (title: string, content: string, tags: string[], description?: string) => {
-        await createPrompt(title, content, tags, description)
+    const handleCreatePrompt = async (title: string, content: string, tags: string[], description?: string, folderId?: string | null) => {
+        await createPrompt(title, content, tags, description, folderId)
         setIsModalOpen(false)
     }
 
@@ -197,7 +210,8 @@ export default function App() {
         title: string,
         content: string,
         tags: string[],
-        description?: string
+        description?: string,
+        folderId?: string | null
     ) => {
         const prompt = prompts.find((p) => p.id === id)
         if (prompt) {
@@ -206,7 +220,8 @@ export default function App() {
                 title,
                 description,
                 content,
-                tags
+                tags,
+                folderId: folderId !== undefined ? folderId : prompt.folderId
             })
         }
     }, [prompts, updatePrompt])
@@ -244,10 +259,11 @@ export default function App() {
             <PromptCard
                 key={prompt.id}
                 prompt={prompt}
+                folders={folders}
                 onToggleFavorite={() => toggleFavorite(prompt.id)}
                 onDelete={() => deletePrompt(prompt.id)}
-                onUpdate={(title, content, tags, description) =>
-                    handleUpdatePrompt(prompt.id, title, content, tags, description)
+                onUpdate={(title, content, tags, description, folderId) =>
+                    handleUpdatePrompt(prompt.id, title, content, tags, description, folderId)
                 }
                 onCopied={() => incrementCopyCount(prompt.id)}
                 selectionMode={selectionMode}
@@ -256,7 +272,7 @@ export default function App() {
             />
         )
 
-    }, [filteredPrompts, toggleFavorite, deletePrompt, handleUpdatePrompt, incrementCopyCount, selectionMode, selectedIds, handleSelect])
+    }, [filteredPrompts, folders, toggleFavorite, deletePrompt, handleUpdatePrompt, incrementCopyCount, selectionMode, selectedIds, handleSelect])
 
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -407,11 +423,13 @@ export default function App() {
                 onAddTag={handleBatchAddTag}
                 onExport={handleBatchExport}
                 onClearSelection={handleClearSelection}
+                onMoveToFolder={handleBatchMoveToFolder}
+                folders={folders}
             />
 
             {/* New Prompt Modal */}
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="New Prompt">
-                <PromptEditor onSave={handleCreatePrompt} onCancel={() => setIsModalOpen(false)} />
+                <PromptEditor folders={folders} onSave={handleCreatePrompt} onCancel={() => setIsModalOpen(false)} />
             </Modal>
 
             {/* Settings Modal */}
