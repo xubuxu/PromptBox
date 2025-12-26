@@ -11,6 +11,7 @@
 - **CSS Framework:** Tailwind CSS (v3.x)
 - **Icons:** Lucide-React
 - **Theming:** Light/Dark mode with CSS variables
+- **Virtualization:** react-virtuoso (optimized rendering for large lists)
 - **Window Management:**
   - Frameless window with custom title bar
   - Always on Top toggle
@@ -20,10 +21,19 @@
 - **Database:** `better-sqlite3` (SQLite)
   - Data stored in `userData/prompts.db`
   - Automatic migration from legacy JSON format
+- **Config Storage:** `electron-store` (user preferences)
 - **Import/Export:** JSON file format via `dialog.showOpenDialog`
 
 ## 4. Key Libraries
-- `better-sqlite3`: SQLite database operations
-- `clsx` & `tailwind-merge`: Dynamic class names
-- `uuid`: Generating Prompt IDs
-- `lucide-react`: Icon components
+
+| Library | Purpose |
+|---------|---------|
+| `better-sqlite3` | SQLite database operations |
+| `electron-store` | User configuration storage |
+| `electron-log` | Structured logging with file persistence |
+| `react-virtuoso` | Virtual scrolling for large prompt lists |
+| `react-markdown` + `remark-gfm` | Markdown rendering |
+| `zod` | Runtime type validation |
+| `clsx` & `tailwind-merge` | Dynamic class names |
+| `uuid` | Generating Prompt IDs |
+| `lucide-react` | Icon components |
