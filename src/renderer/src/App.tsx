@@ -2,17 +2,20 @@ import { useState, useMemo, useCallback } from 'react'
 import { TitleBar, Sidebar, PromptCard, SearchBar, PromptEditor, Modal, SettingsModalContent, BatchActionBar } from './components'
 import { ViewType, SourceFilter } from './components/Sidebar'
 import { usePrompts } from './hooks/usePrompts'
+import { useFolders } from './hooks/useFolders'
 import { useTheme } from './contexts/ThemeContext'
-import { Loader2, Sparkles, Tag, ArrowLeft, CheckSquare, X } from 'lucide-react'
+import { Loader2, Sparkles, Tag, ArrowLeft, CheckSquare, X, FolderOpen } from 'lucide-react'
 
 /**
  * Main Application Component
  */
 export default function App() {
-    const { prompts, isLoading, createPrompt, updatePrompt, deletePrompt, toggleFavorite, incrementCopyCount } =
+    const { prompts, isLoading, fetchPrompts, createPrompt, updatePrompt, deletePrompt, toggleFavorite, incrementCopyCount } =
         usePrompts()
+    const { folders, createFolder, updateFolder, deleteFolder } = useFolders()
     const [searchQuery, setSearchQuery] = useState('')
     const [activeView, setActiveView] = useState<ViewType>('all')
+    const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
     const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
     const [selectedTag, setSelectedTag] = useState<string | null>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -45,6 +48,9 @@ export default function App() {
         if (view !== 'collections') {
             setSelectedTag(null)
         }
+        if (view !== 'folders') {
+            setActiveFolderId(null)
+        }
     }
 
     // Filter prompts based on search query and active view
@@ -72,6 +78,22 @@ export default function App() {
             } else if (sourceFilter === 'system') {
                 result = result.filter((p) => p.id.startsWith('default-'))
             }
+        }
+
+        // Filter by folder
+        if (activeView === 'folders' && activeFolderId) {
+            result = result.filter((p) => p.folderId === activeFolderId)
+        } else if (activeView === 'folders' && !activeFolderId) {
+            // Show root folders' prompts or all folders?
+            // Usually clicking "Folders" shows root items.
+            // But for now let's say "folders" view without ID shows nothing or root prompts?
+            // Let's decide: activeView='folders' requires activeFolderId to be meaningful for prompts?
+            // Or maybe we treat 'folders' view as "Browsing folders". 
+            // If activeFolderId is null, show prompts with folderId === null ??
+            // Let's assume root prompts have folderId = null. 
+            // But wait, "All Prompts" shows everything. 
+            // "Folders" view should probably mimic file explorer.
+            result = result.filter((p) => p.folderId === activeFolderId)
         }
 
         // Filter by search query
@@ -175,6 +197,20 @@ export default function App() {
         }
     }
 
+    /**
+     * Handle import from sidebar - calls IPC import and refreshes list
+     */
+    const handleImport = async () => {
+        try {
+            const result = await window.api.importData()
+            if (result.includes('successfully')) {
+                fetchPrompts()
+            }
+        } catch (error) {
+            console.error('Import failed:', error)
+        }
+    }
+
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-background">
             {/* Custom Title Bar */}
@@ -185,10 +221,26 @@ export default function App() {
                 <Sidebar
                     onNewPrompt={handleNewPrompt}
                     onOpenSettings={() => setIsSettingsOpen(true)}
+                    onImportClick={handleImport}
                     activeView={activeView}
                     onViewChange={handleViewChange}
                     sourceFilter={sourceFilter}
                     onSourceFilterChange={setSourceFilter}
+                    folders={folders}
+                    activeFolderId={activeFolderId}
+                    onFolderSelect={(id) => {
+                        setActiveView('folders')
+                        setActiveFolderId(id)
+                    }}
+                    onCreateFolder={createFolder}
+                    onUpdateFolder={updateFolder}
+                    onDeleteFolder={deleteFolder}
+                    tags={tagCollections.map(t => t.tag)}
+                    selectedTag={selectedTag}
+                    onTagSelect={(tag) => {
+                        setActiveView('collections')
+                        setSelectedTag(tag)
+                    }}
                 />
 
                 {/* Main Content */}
@@ -212,14 +264,20 @@ export default function App() {
                                         {activeView === 'mostUsed' && 'Most Used'}
                                         {activeView === 'collections' && !selectedTag && 'Collections'}
                                         {activeView === 'collections' && selectedTag && `#${selectedTag}`}
+                                        {activeView === 'folders' && (
+                                            <span className="flex items-center gap-2">
+                                                <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                                                {folders.find(f => f.id === activeFolderId)?.name || 'Folders'}
+                                            </span>
+                                        )}
                                     </h1>
                                 </div>
                                 {/* Selection Mode Toggle */}
                                 <button
                                     onClick={handleToggleSelectionMode}
                                     className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${selectionMode
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                                         }`}
                                 >
                                     {selectionMode ? <X className="h-4 w-4" /> : <CheckSquare className="h-4 w-4" />}
@@ -355,7 +413,7 @@ function EmptyState({ onNewPrompt, hasSearch }: EmptyStateProps) {
             </p>
             <button
                 onClick={onNewPrompt}
-                className="rounded-lg bg-gradient-to-r from-primary to-accent px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
+                className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md"
             >
                 Create your first prompt
             </button>

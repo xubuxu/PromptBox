@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC_CHANNELS, IElectronAPI, Prompt } from '@shared/types'
+import { IPC_CHANNELS, IElectronAPI, Prompt, Folder } from '@shared/types'
 
 /**
  * Expose the API to the renderer process via contextBridge
@@ -49,6 +49,32 @@ const api: IElectronAPI = {
     // Usage Statistics
     incrementCopyCount: (id: string): Promise<boolean> => {
         return ipcRenderer.invoke(IPC_CHANNELS.INCREMENT_COPY_COUNT, id)
+    },
+
+    // Folder Operations
+    getFolders: (): Promise<Folder[]> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.GET_FOLDERS)
+    },
+
+    createFolder: (folder: Folder): Promise<boolean> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.CREATE_FOLDER, folder)
+    },
+
+    updateFolder: (folder: Folder): Promise<boolean> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.UPDATE_FOLDER, folder)
+    },
+
+    deleteFolder: (id: string): Promise<boolean> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.DELETE_FOLDER, id)
+    },
+
+    // Database Location
+    getDbPath: (): Promise<string> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.GET_DB_PATH)
+    },
+
+    moveDb: (): Promise<{ success: boolean; message: string }> => {
+        return ipcRenderer.invoke(IPC_CHANNELS.MOVE_DB)
     }
 }
 

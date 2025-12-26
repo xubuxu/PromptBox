@@ -210,7 +210,7 @@ export function VariableInputModal({
                     </button>
                     <button
                         onClick={handleCopy}
-                        className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
+                        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md"
                     >
                         <Copy className="h-4 w-4" />
                         Copy

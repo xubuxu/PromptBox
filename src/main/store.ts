@@ -1,42 +1,49 @@
-import { promises as fs } from 'fs'
-import type { Prompt } from '@shared/types'
+// Remove static import
+// import Store from 'electron-store'
+import { app } from 'electron'
+import { join } from 'path'
+
+export interface StoreSchema {
+    dbPath: string
+    isFirstRun: boolean
+}
+
+let store: any = null
 
 /**
- * Export prompts to a user-selected file
- * @param prompts Array of Prompt objects to export
- * @param targetPath The file path to export to
+ * Initialize electron-store asynchronously (ESM workaround)
  */
-export async function exportPromptsToFile(
-    prompts: Prompt[],
-    targetPath: string
-): Promise<void> {
-    const exportData = {
-        version: '1.0',
-        exportDate: Date.now(),
-        prompts
-    }
+export async function initStore(): Promise<void> {
+    const { default: Store } = await import('electron-store')
 
-    const data = JSON.stringify(exportData, null, 2)
-    await fs.writeFile(targetPath, data, 'utf-8')
+    store = new Store<StoreSchema>({
+        defaults: {
+            dbPath: join(app.getPath('userData'), 'prompts.db'),
+            isFirstRun: true
+        }
+    })
 }
 
 /**
- * Import prompts from a file
- * @param sourcePath The file path to import from
- * @returns Array of Prompt objects
+ * Get the current database path
  */
-export async function importPromptsFromFile(sourcePath: string): Promise<Prompt[]> {
-    const data = await fs.readFile(sourcePath, 'utf-8')
-    const parsed = JSON.parse(data)
-
-    // Handle both raw array and versioned export format
-    if (Array.isArray(parsed)) {
-        return parsed as Prompt[]
+export function getDbPath(): string {
+    if (!store) {
+        // Fallback or throw? Ideally initStore is called before this.
+        // If called too early (should not happen with correct flow), fallback to default
+        console.warn('Store not initialized when calling getDbPath')
+        return join(app.getPath('userData'), 'prompts.db')
     }
+    return store.get('dbPath')
+}
 
-    if (parsed.prompts && Array.isArray(parsed.prompts)) {
-        return parsed.prompts as Prompt[]
+/**
+ * Set the database path
+ */
+export function setDbPath(path: string): void {
+    if (!store) {
+        console.error('Store not initialized when calling setDbPath')
+        return
     }
-
-    throw new Error('Invalid import file format')
+    store.set('dbPath', path)
 }

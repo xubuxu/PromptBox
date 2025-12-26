@@ -26,7 +26,10 @@ export interface Prompt {
     /** Unix timestamp of creation */
     createdAt: number;
     /** Unix timestamp of last update */
+    /** Unix timestamp of last update */
     updatedAt: number;
+    /** ID of the folder this prompt belongs to (null for root) */
+    folderId?: string | null;
 }
 
 /**
@@ -52,6 +55,16 @@ export interface IElectronAPI {
 
     // Usage Statistics
     incrementCopyCount: (id: string) => Promise<boolean>;
+
+    // Folder Operations
+    getFolders: () => Promise<Folder[]>;
+    createFolder: (folder: Folder) => Promise<boolean>;
+    updateFolder: (folder: Folder) => Promise<boolean>;
+    deleteFolder: (id: string) => Promise<boolean>;
+
+    // Database Location
+    getDbPath: () => Promise<string>;
+    moveDb: () => Promise<{ success: boolean; message: string }>;
 }
 
 /**
@@ -67,5 +80,34 @@ export const IPC_CHANNELS = {
     HIDE_WINDOW: 'window:hide',
     GET_AUTO_LAUNCH: 'app:getAutoLaunch',
     SET_AUTO_LAUNCH: 'app:setAutoLaunch',
-    INCREMENT_COPY_COUNT: 'prompts:incrementCopyCount'
+    INCREMENT_COPY_COUNT: 'prompts:incrementCopyCount',
+    TOGGLE_FAVORITE: 'prompts:toggleFavorite',
+    MINIMIZE_WINDOW: 'window:minimize',
+    CLOSE_WINDOW: 'window:close',
+
+    // Folder Operations
+    GET_FOLDERS: 'folders:get',
+    CREATE_FOLDER: 'folders:create',
+    UPDATE_FOLDER: 'folders:update',
+    DELETE_FOLDER: 'folders:delete',
+
+    // Database Location
+    GET_DB_PATH: 'db:getPath',
+    MOVE_DB: 'db:move'
 } as const;
+
+/**
+ * Folder data model
+ */
+export interface Folder {
+    /** UUID identifier */
+    id: string;
+    /** Folder name */
+    name: string;
+    /** Parent folder ID (null for root folders) */
+    parentId: string | null;
+    /** Unix timestamp of creation */
+    createdAt: number;
+    /** Unix timestamp of last update */
+    updatedAt: number;
+}

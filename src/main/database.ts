@@ -1,17 +1,18 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
-import { join } from 'path'
-import { existsSync, readFileSync, renameSync } from 'fs'
-import type { Prompt } from '@shared/types'
+import { join, dirname, basename } from 'path'
+import { existsSync, readFileSync, renameSync, copyFileSync, mkdirSync } from 'fs'
+import type { Prompt, Folder } from '@shared/types'
 import { DEFAULT_PROMPTS } from './defaultPrompts'
+import { getDbPath, setDbPath } from './store'
 
 let db: Database.Database | null = null
 
 /**
- * Get the database file path
+ * Get the current database file path from store
  */
 function getDatabasePath(): string {
-    return join(app.getPath('userData'), 'prompts.db')
+    return getDbPath()
 }
 
 /**
@@ -28,7 +29,38 @@ export function initDatabase(): void {
     if (db) return
 
     const dbPath = getDatabasePath()
-    db = new Database(dbPath)
+
+    // Ensure directory exists
+    const dbDir = dirname(dbPath)
+    if (!existsSync(dbDir)) {
+        try {
+            mkdirSync(dbDir, { recursive: true })
+        } catch (error) {
+            console.error('Failed to create database directory:', error)
+            // Fallback to userData if custom path fails
+            const fallbackPath = join(app.getPath('userData'), 'prompts.db')
+            setDbPath(fallbackPath)
+            db = new Database(fallbackPath)
+            initTables()
+            return
+        }
+    }
+
+    try {
+        db = new Database(dbPath)
+        initTables()
+    } catch (err) {
+        console.error('Failed to open database at', dbPath, err)
+        // Fallback
+        const fallbackPath = join(app.getPath('userData'), 'prompts.db')
+        setDbPath(fallbackPath)
+        db = new Database(fallbackPath)
+        initTables()
+    }
+}
+
+function initTables() {
+    if (!db) return
 
     // Enable WAL mode for better performance
     db.pragma('journal_mode = WAL')
@@ -44,24 +76,37 @@ export function initDatabase(): void {
             tags TEXT NOT NULL DEFAULT '[]',
             isFavorite INTEGER NOT NULL DEFAULT 0,
             copyCount INTEGER NOT NULL DEFAULT 0,
+            folderId TEXT,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL
         )
     `)
 
-    // Add copyCount column if not exists (for existing databases)
+    // Create folders table if not exists
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS folders (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            parentId TEXT,
+            createdAt INTEGER NOT NULL,
+            updatedAt INTEGER NOT NULL
+        )
+    `)
+
+    // Add copyCount column if not exists
     try {
         db.exec('ALTER TABLE prompts ADD COLUMN copyCount INTEGER NOT NULL DEFAULT 0')
-    } catch {
-        // Column already exists, ignore error
-    }
+    } catch { /* ignore */ }
 
-    // Add content_zh column if not exists (for bilingual support)
+    // Add content_zh column if not exists
     try {
         db.exec('ALTER TABLE prompts ADD COLUMN content_zh TEXT')
-    } catch {
-        // Column already exists, ignore error
-    }
+    } catch { /* ignore */ }
+
+    // Add folderId column if not exists
+    try {
+        db.exec('ALTER TABLE prompts ADD COLUMN folderId TEXT')
+    } catch { /* ignore */ }
 
     // Migrate from old JSON file if exists
     migrateFromJson()
@@ -69,8 +114,56 @@ export function initDatabase(): void {
     // Import default prompts if database is empty
     importDefaultPrompts()
 
-    // Ensure Prompt Engineer template exists (even in existing databases)
+    // Ensure Prompt Engineer template exists
     ensurePromptEngineerExists()
+}
+
+/**
+ * Move the database to a new location
+ */
+export function moveDatabase(newPath: string): { success: boolean, message: string } {
+    try {
+        if (!db) initDatabase()
+
+        const currentPath = getDatabasePath()
+
+        // Cannot move to same path
+        if (currentPath === newPath) {
+            return { success: false, message: 'Source and destination are the same.' }
+        }
+
+        // Close current connection
+        closeDatabase()
+
+        // Create new directory if needed
+        const newDir = dirname(newPath)
+        if (!existsSync(newDir)) {
+            mkdirSync(newDir, { recursive: true })
+        }
+
+        // Copy file
+        copyFileSync(currentPath, newPath)
+
+        // Copy SHM and WAL files if they exist (WAL mode artifacts)
+        const currentShm = currentPath + '-shm'
+        const currentWal = currentPath + '-wal'
+        if (existsSync(currentShm)) copyFileSync(currentShm, newPath + '-shm')
+        if (existsSync(currentWal)) copyFileSync(currentWal, newPath + '-wal')
+
+        // Update store
+        setDbPath(newPath)
+
+        // Re-initialize with new path
+        initDatabase()
+
+        return { success: true, message: 'Database successfully moved.' }
+
+    } catch (error) {
+        console.error('Failed to move database:', error)
+        // Try to re-open old db if copy failed
+        initDatabase()
+        return { success: false, message: `Failed to move database: ${(error as Error).message}` }
+    }
 }
 
 /**
@@ -220,6 +313,7 @@ export function getAllPrompts(): Prompt[] {
         tags: string
         isFavorite: number
         copyCount: number
+        folderId: string | null
         createdAt: number
         updatedAt: number
     }[]
@@ -233,9 +327,85 @@ export function getAllPrompts(): Prompt[] {
         tags: JSON.parse(row.tags),
         isFavorite: row.isFavorite === 1,
         copyCount: row.copyCount,
+        folderId: row.folderId || null,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt
     }))
+}
+
+/**
+ * Get all folders
+ */
+export function getFolders(): Folder[] {
+    if (!db) initDatabase()
+
+    const rows = db!.prepare('SELECT * FROM folders ORDER BY name ASC').all() as Folder[]
+    return rows
+}
+
+/**
+ * Create a new folder
+ */
+export function createFolder(folder: Folder): boolean {
+    if (!db) initDatabase()
+
+    try {
+        const stmt = db!.prepare(`
+            INSERT INTO folders (id, name, parentId, createdAt, updatedAt)
+            VALUES (@id, @name, @parentId, @createdAt, @updatedAt)
+        `)
+
+        stmt.run(folder)
+        return true
+    } catch (error) {
+        console.error('Failed to create folder:', error)
+        return false
+    }
+}
+
+/**
+ * Update a folder
+ */
+export function updateFolder(folder: Folder): boolean {
+    if (!db) initDatabase()
+
+    try {
+        const stmt = db!.prepare(`
+            UPDATE folders 
+            SET name = @name, parentId = @parentId, updatedAt = @updatedAt
+            WHERE id = @id
+        `)
+
+        stmt.run(folder)
+        return true
+    } catch (error) {
+        console.error('Failed to update folder:', error)
+        return false
+    }
+}
+
+/**
+ * Delete a folder
+ */
+export function deleteFolder(id: string): boolean {
+    if (!db) initDatabase()
+
+    try {
+        // Transaction to delete folder and move contents to root (or delete them? Let's move to root for safety)
+        const deleteTx = db!.transaction(() => {
+            // Unlink prompts in this folder (set folderId to null)
+            db!.prepare('UPDATE prompts SET folderId = NULL WHERE folderId = ?').run(id)
+
+            // Delete the folder
+            db!.prepare('DELETE FROM folders WHERE id = ?').run(id)
+        })
+
+        deleteTx()
+        return true
+    } catch (error) {
+        console.error('Failed to delete folder:', error)
+        return false
+    }
 }
 
 /**
@@ -246,8 +416,8 @@ export function savePrompt(prompt: Prompt): boolean {
 
     try {
         const stmt = db!.prepare(`
-            INSERT OR REPLACE INTO prompts (id, title, description, content, content_zh, tags, isFavorite, copyCount, createdAt, updatedAt)
-            VALUES (@id, @title, @description, @content, @content_zh, @tags, @isFavorite, @copyCount, @createdAt, @updatedAt)
+            INSERT OR REPLACE INTO prompts (id, title, description, content, content_zh, tags, isFavorite, copyCount, folderId, createdAt, updatedAt)
+            VALUES (@id, @title, @description, @content, @content_zh, @tags, @isFavorite, @copyCount, @folderId, @createdAt, @updatedAt)
         `)
 
         stmt.run({
@@ -259,6 +429,7 @@ export function savePrompt(prompt: Prompt): boolean {
             tags: JSON.stringify(prompt.tags),
             isFavorite: prompt.isFavorite ? 1 : 0,
             copyCount: prompt.copyCount || 0,
+            folderId: prompt.folderId || null,
             createdAt: prompt.createdAt,
             updatedAt: prompt.updatedAt
         })

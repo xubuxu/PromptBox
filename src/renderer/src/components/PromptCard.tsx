@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
-import { Star, Copy, Trash2, Pencil, Check, Globe } from 'lucide-react'
+import { Star, Copy, Trash2, Pencil, Check } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Prompt } from '@shared/types'
 import { PromptEditor } from './PromptEditor'
 import { Toast } from './Toast'
@@ -44,20 +46,14 @@ export function PromptCard({
     const [showVariableModal, setShowVariableModal] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
-    const [currentLang, setCurrentLang] = useState<'en' | 'zh'>('zh')
     const { theme, uiStyle } = useTheme()
 
     const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
         setToast({ message, type })
     }, [])
 
-    // Get current content based on language selection (for display)
-    const displayContent = useMemo(() => {
-        if (currentLang === 'zh' && prompt.content_zh) {
-            return prompt.content_zh
-        }
-        return prompt.content
-    }, [currentLang, prompt.content, prompt.content_zh])
+    // Content for display and copying
+    const displayContent = prompt.content
 
     // Get content for copying (always English)
     const copyContent = prompt.content
@@ -99,8 +95,7 @@ export function PromptCard({
     const variableMatches = displayContent.match(/\{\{(.*?)\}\}/g) || []
     const variables = variableMatches.map((v: string) => v.replace(/\{\{|\}\}/g, ''))
 
-    // Check if bilingual content is available
-    const hasBilingual = !!prompt.content_zh
+
 
     // Sort tags alphabetically
     const sortedTags = useMemo(() => sortTags(prompt.tags), [prompt.tags])
@@ -155,17 +150,6 @@ export function PromptCard({
                 <div className="mb-2 flex items-start justify-between">
                     <h3 className="font-medium text-foreground">{prompt.title}</h3>
                     <div className="flex items-center gap-1">
-                        {/* Language Toggle */}
-                        {hasBilingual && (
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setCurrentLang(currentLang === 'en' ? 'zh' : 'en') }}
-                                className="flex h-7 items-center gap-1 rounded-md px-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                title={currentLang === 'en' ? 'Switch to Chinese' : 'Switch to English'}
-                            >
-                                <Globe className="h-3.5 w-3.5" />
-                                <span>{currentLang === 'en' ? 'EN' : '中'}</span>
-                            </button>
-                        )}
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
                             className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${prompt.isFavorite
@@ -179,9 +163,34 @@ export function PromptCard({
                 </div>
 
                 {/* Description or Content Preview */}
-                <p className="mb-3 line-clamp-2 text-sm text-muted-foreground">
-                    {prompt.description || displayContent}
-                </p>
+                <div className="mb-3 max-h-[4.5rem] overflow-hidden text-sm text-muted-foreground mask-linear-fade">
+                    <div className="mb-3 max-h-[4.5rem] overflow-hidden text-sm text-muted-foreground mask-linear-fade">
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                                p: ({ children }: { children?: React.ReactNode }) => <p className="mb-1 last:mb-0">{children}</p>,
+                                a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+                                    <a href={href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                                        {children}
+                                    </a>
+                                ),
+                                code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => {
+                                    const isInline = !className?.includes('language-') && !String(children).includes('\n')
+                                    return (
+                                        <code className={`${isInline ? 'rounded bg-muted px-1 py-0.5 font-mono text-xs' : 'block w-full overflow-x-auto rounded bg-muted p-2 font-mono text-xs'}`} {...props}>
+                                            {children}
+                                        </code>
+                                    )
+                                },
+                                ul: ({ children }: { children?: React.ReactNode }) => <ul className="ml-4 list-disc space-y-0.5">{children}</ul>,
+                                ol: ({ children }: { children?: React.ReactNode }) => <ol className="ml-4 list-decimal space-y-0.5">{children}</ol>,
+                                blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-primary/50 pl-2 italic">{children}</blockquote>
+                            }}
+                        >
+                            {prompt.description || displayContent}
+                        </ReactMarkdown>
+                    </div>
+                </div>
 
                 {/* Variables */}
                 {variables.length > 0 && (

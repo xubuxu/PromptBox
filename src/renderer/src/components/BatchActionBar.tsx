@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Trash2, Tag, X, Download, CheckSquare } from 'lucide-react'
+import { Trash2, Tag, X, Download, CheckSquare, FolderInput } from 'lucide-react'
 import { ConfirmDialog } from './ConfirmDialog'
+import { Folder } from '@shared/types'
 
 interface BatchActionBarProps {
     selectedCount: number
@@ -8,6 +9,8 @@ interface BatchActionBarProps {
     onAddTag: (tag: string) => void
     onExport: () => void
     onClearSelection: () => void
+    onMoveToFolder?: (folderId: string | null) => void
+    folders?: Folder[]
 }
 
 /**
@@ -18,11 +21,14 @@ export function BatchActionBar({
     onDelete,
     onAddTag,
     onExport,
-    onClearSelection
+    onClearSelection,
+    onMoveToFolder,
+    folders = []
 }: BatchActionBarProps) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showTagInput, setShowTagInput] = useState(false)
     const [tagInput, setTagInput] = useState('')
+    const [showFolderSelect, setShowFolderSelect] = useState(false)
 
     if (selectedCount === 0) return null
 
@@ -50,6 +56,88 @@ export function BatchActionBar({
                         {selectedCount} selected
                     </span>
                 </div>
+
+                {/* Move to Folder */}
+                {onMoveToFolder && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFolderSelect(!showFolderSelect)}
+                            className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
+                        >
+                            <FolderInput className="h-4 w-4" />
+                            Move to...
+                        </button>
+
+                        {showFolderSelect && (
+                            <div className="absolute bottom-full left-0 mb-2 w-48 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg">
+                                <div className="max-h-60 overflow-y-auto p-1">
+                                    <button
+                                        onClick={() => {
+                                            onMoveToFolder(null)
+                                            setShowFolderSelect(false)
+                                        }}
+                                        className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                    >
+                                        Root (No Folder)
+                                    </button>
+                                    {folders.map(folder => (
+                                        <button
+                                            key={folder.id}
+                                            onClick={() => {
+                                                onMoveToFolder(folder.id)
+                                                setShowFolderSelect(false)
+                                            }}
+                                            className="w-full truncate rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                        >
+                                            {folder.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Move to Folder */}
+                {onMoveToFolder && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFolderSelect(!showFolderSelect)}
+                            className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
+                        >
+                            <FolderInput className="h-4 w-4" />
+                            Move to...
+                        </button>
+
+                        {showFolderSelect && (
+                            <div className="absolute bottom-full left-0 mb-2 w-48 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-lg">
+                                <div className="max-h-60 overflow-y-auto p-1">
+                                    <button
+                                        onClick={() => {
+                                            onMoveToFolder(null)
+                                            setShowFolderSelect(false)
+                                        }}
+                                        className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                    >
+                                        Root (No Folder)
+                                    </button>
+                                    {folders.map(folder => (
+                                        <button
+                                            key={folder.id}
+                                            onClick={() => {
+                                                onMoveToFolder(folder.id)
+                                                setShowFolderSelect(false)
+                                            }}
+                                            className="w-full truncate rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                        >
+                                            {folder.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Tag Input / Button */}
                 {showTagInput ? (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Download, Upload, Loader2, CheckCircle2, XCircle, Palette, Sparkles, Power } from 'lucide-react'
+import { Download, Upload, Loader2, CheckCircle2, XCircle, Palette, Sparkles, Power, Database } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 interface SettingsModalContentProps {
@@ -176,6 +176,9 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                     Data Management
                 </h3>
                 <div className="space-y-3">
+                    {/* Database Location */}
+                    <DatabaseLocationSettings />
+
                     {/* Export Button */}
                     <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-4">
                         <div>
@@ -187,7 +190,7 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                         <button
                             onClick={handleExport}
                             disabled={exportStatus.type === 'loading'}
-                            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-accent px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 disabled:opacity-50"
+                            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md disabled:opacity-50"
                         >
                             {exportStatus.type === 'loading' ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -239,16 +242,87 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
     )
 }
 
+// ... (imports)
+// ... (existing components)
+
+function DatabaseLocationSettings() {
+    const [dbPath, setDbPath] = useState<string>('')
+    const [loading, setLoading] = useState(false)
+    const [status, setStatus] = useState<StatusState>({ type: 'idle', message: '' })
+
+    useEffect(() => {
+        window.api.getDbPath().then(setDbPath)
+    }, [])
+
+    const handleMoveDb = async () => {
+        setLoading(true)
+        setStatus({ type: 'loading', message: 'Moving database...' })
+        try {
+            const result = await window.api.moveDb()
+            if (result.success) {
+                setStatus({ type: 'success', message: result.message })
+                const newPath = await window.api.getDbPath()
+                setDbPath(newPath)
+            } else {
+                if (result.message === 'Selection cancelled') {
+                    setStatus({ type: 'idle', message: '' })
+                } else {
+                    setStatus({ type: 'error', message: result.message })
+                }
+            }
+        } catch (error) {
+            setStatus({ type: 'error', message: `Error: ${(error as Error).message}` })
+        }
+        setLoading(false)
+
+        // Clear success message
+        if (status.type === 'success') {
+            setTimeout(() => setStatus({ type: 'idle', message: '' }), 3000)
+        }
+    }
+
+    return (
+        <div className="flex flex-col gap-2 rounded-lg border border-border bg-secondary/30 p-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+                        <Database className="h-5 w-5 text-foreground" />
+                    </div>
+                    <div>
+                        <p className="font-medium text-foreground">Storage Location</p>
+                        <p className="text-sm text-muted-foreground break-all max-w-[200px] sm:max-w-xs truncate" title={dbPath}>
+                            {dbPath || 'Loading...'}
+                        </p>
+                    </div>
+                </div>
+                <button
+                    onClick={handleMoveDb}
+                    disabled={loading}
+                    className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
+                >
+                    {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Change'}
+                </button>
+            </div>
+            {status.message && (
+                <div className="mt-2 text-xs">
+                    <StatusMessage status={status} />
+                </div>
+            )}
+        </div>
+    )
+}
+
 /**
  * Displays status messages with appropriate icons
  */
 function StatusMessage({ status }: { status: StatusState }) {
     const iconClass = status.type === 'success' ? 'text-green-500' : 'text-red-500'
-    const Icon = status.type === 'success' ? CheckCircle2 : XCircle
+    const Icon = status.type === 'success' ? CheckCircle2 : (status.type === 'loading' ? Loader2 : XCircle)
+    const spinClass = status.type === 'loading' ? 'animate-spin' : ''
 
     return (
         <div className={`flex items-center gap-2 text-sm ${iconClass}`}>
-            <Icon className="h-4 w-4" />
+            <Icon className={`h-4 w-4 ${spinClass}`} />
             <span>{status.message}</span>
         </div>
     )

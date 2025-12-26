@@ -23,7 +23,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             />
 
             {/* Modal Content */}
-            <div className="relative z-10 w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl">
+            <div className="animate-appear relative z-10 w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-2xl">
                 {/* Header */}
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-lg font-semibold text-foreground">{title}</h2>

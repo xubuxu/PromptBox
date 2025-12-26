@@ -1,13 +1,30 @@
-import { app, BrowserWindow, globalShortcut, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, globalShortcut, Tray, Menu, nativeImage, crashReporter } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipcHandlers'
+import { logger } from './logger'
+
+// Initialize crash reporter (logs crashes locally)
+crashReporter.start({
+    productName: 'PromptBox',
+    submitURL: '', // Empty URL = local only, no remote submission
+    uploadToServer: false
+})
 
 // Fix GPU cache permission issues on Windows
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
 
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught exception in main process:', error)
+})
+
+process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled promise rejection:', reason)
+})
+
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
-let registeredHotkey: string | null = null
+let _registeredHotkey: string | null = null
 let isQuitting = false
 
 /**
@@ -129,7 +146,7 @@ function registerGlobalHotkey(): void {
     for (const hotkey of hotkeys) {
         const registered = globalShortcut.register(hotkey, toggleWindow)
         if (registered) {
-            registeredHotkey = hotkey
+            _registeredHotkey = hotkey
             console.log(`Global hotkey registered: ${hotkey}`)
             return
         }
@@ -139,7 +156,9 @@ function registerGlobalHotkey(): void {
 }
 
 // App lifecycle
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+    await import('./store').then(m => m.initStore()) // Dynamic import to be safe, though static import of module is fine if it has no side effects
+
     registerIpcHandlers()
     createWindow()
     createTray()

@@ -23,6 +23,13 @@
         "src/**/*",
         "electron.vite.config.ts"
     ],
+    "exclude": [
+        "src/**/__tests__/**/*",
+        "src/**/*.test.ts",
+        "src/**/*.test.tsx",
+        "src/**/*.spec.ts",
+        "vitest.config.ts"
+    ],
     "references": [
         {
             "path": "./tsconfig.node.json"
