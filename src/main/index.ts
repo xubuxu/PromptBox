@@ -2,6 +2,7 @@ import { app, BrowserWindow, globalShortcut, Tray, Menu, nativeImage, crashRepor
 import { join } from 'path'
 import { registerIpcHandlers } from './ipcHandlers'
 import { logger } from './logger'
+import { initStore } from './store'
 
 // Initialize crash reporter (logs crashes locally)
 crashReporter.start({
@@ -157,7 +158,7 @@ function registerGlobalHotkey(): void {
 
 // App lifecycle
 app.whenReady().then(async () => {
-    await import('./store').then(m => m.initStore()) // Dynamic import to be safe, though static import of module is fine if it has no side effects
+    await initStore()
 
     registerIpcHandlers()
     createWindow()

@@ -162,6 +162,17 @@ export function registerIpcHandlers(): void {
         if (win) win.close()
     })
 
+    // Toggle Always on Top
+    ipcMain.handle(IPC_CHANNELS.TOGGLE_ALWAYS_ON_TOP, () => {
+        const win = getMainWindow()
+        if (win) {
+            const newState = !win.isAlwaysOnTop()
+            win.setAlwaysOnTop(newState)
+            return newState
+        }
+        return false
+    })
+
     // --- Settings / Auto-Launch Handlers ---
 
     ipcMain.handle(IPC_CHANNELS.GET_AUTO_LAUNCH, () => {
