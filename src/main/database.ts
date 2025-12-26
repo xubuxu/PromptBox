@@ -5,6 +5,7 @@ import { existsSync, readFileSync, renameSync, copyFileSync, mkdirSync } from 'f
 import type { Prompt, Folder } from '@shared/types'
 import { DEFAULT_PROMPTS } from './defaultPrompts'
 import { getDbPath, setDbPath } from './store'
+import { logger } from './logger'
 
 let db: Database.Database | null = null
 
@@ -36,7 +37,7 @@ export function initDatabase(): void {
         try {
             mkdirSync(dbDir, { recursive: true })
         } catch (error) {
-            console.error('Failed to create database directory:', error)
+            logger.error('Failed to create database directory:', error)
             // Fallback to userData if custom path fails
             const fallbackPath = join(app.getPath('userData'), 'prompts.db')
             setDbPath(fallbackPath)
@@ -50,7 +51,7 @@ export function initDatabase(): void {
         db = new Database(dbPath)
         initTables()
     } catch (err) {
-        console.error('Failed to open database at', dbPath, err)
+        logger.error('Failed to open database at', dbPath, err)
         // Fallback
         const fallbackPath = join(app.getPath('userData'), 'prompts.db')
         setDbPath(fallbackPath)
@@ -159,7 +160,7 @@ export function moveDatabase(newPath: string): { success: boolean, message: stri
         return { success: true, message: 'Database successfully moved.' }
 
     } catch (error) {
-        console.error('Failed to move database:', error)
+        logger.error('Failed to move database:', error)
         // Try to re-open old db if copy failed
         initDatabase()
         return { success: false, message: `Failed to move database: ${(error as Error).message}` }
@@ -211,9 +212,9 @@ function migrateFromJson(): void {
 
         // Rename old file to mark as migrated
         renameSync(jsonPath, jsonPath + '.migrated')
-        console.log(`Migrated ${prompts.length} prompts from JSON to SQLite`)
+        logger.info(`Migrated ${prompts.length} prompts from JSON to SQLite`)
     } catch (error) {
-        console.error('Failed to migrate from JSON:', error)
+        logger.error('Failed to migrate from JSON:', error)
     }
 }
 
@@ -251,9 +252,9 @@ function importDefaultPrompts(): void {
         })
 
         insertMany(DEFAULT_PROMPTS)
-        console.log(`Imported ${DEFAULT_PROMPTS.length} default prompts`)
+        logger.info(`Imported ${DEFAULT_PROMPTS.length} default prompts`)
     } catch (error) {
-        console.error('Failed to import default prompts:', error)
+        logger.error('Failed to import default prompts:', error)
     }
 }
 
@@ -292,9 +293,9 @@ function ensurePromptEngineerExists(): void {
             updatedAt: promptEngineer.updatedAt
         })
 
-        console.log('Added Prompt Engineer template to existing database')
+        logger.info('Added Prompt Engineer template to existing database')
     } catch (error) {
-        console.error('Failed to add Prompt Engineer:', error)
+        logger.error('Failed to add Prompt Engineer:', error)
     }
 }
 
@@ -358,7 +359,7 @@ export function createFolder(folder: Folder): boolean {
         stmt.run(folder)
         return true
     } catch (error) {
-        console.error('Failed to create folder:', error)
+        logger.error('Failed to create folder:', error)
         return false
     }
 }
@@ -379,7 +380,7 @@ export function updateFolder(folder: Folder): boolean {
         stmt.run(folder)
         return true
     } catch (error) {
-        console.error('Failed to update folder:', error)
+        logger.error('Failed to update folder:', error)
         return false
     }
 }
@@ -403,7 +404,7 @@ export function deleteFolder(id: string): boolean {
         deleteTx()
         return true
     } catch (error) {
-        console.error('Failed to delete folder:', error)
+        logger.error('Failed to delete folder:', error)
         return false
     }
 }
@@ -436,7 +437,7 @@ export function savePrompt(prompt: Prompt): boolean {
 
         return true
     } catch (error) {
-        console.error('Failed to save prompt:', error)
+        logger.error('Failed to save prompt:', error)
         return false
     }
 }
@@ -452,7 +453,7 @@ export function incrementCopyCount(id: string): boolean {
         stmt.run(id)
         return true
     } catch (error) {
-        console.error('Failed to increment copy count:', error)
+        logger.error('Failed to increment copy count:', error)
         return false
     }
 }
@@ -468,7 +469,7 @@ export function deletePrompt(id: string): boolean {
         stmt.run(id)
         return true
     } catch (error) {
-        console.error('Failed to delete prompt:', error)
+        logger.error('Failed to delete prompt:', error)
         return false
     }
 }

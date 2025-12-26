@@ -14,7 +14,7 @@
 | 前端 | React 18 + TypeScript |
 | 样式 | Tailwind CSS v3 |
 | 图标 | Lucide React |
-| 数据存储 | 本地 JSON 文件 (`prompts.json`) |
+| 数据存储 | SQLite 用于数据 (`prompts.db`), Electron Store 用于配置 |
 
 ## ⚡ 快速开始 (Quick Start)
 
@@ -49,7 +49,7 @@ npm run build
 - **⭐ 收藏功能** - 快速访问常用提示词
 - **🧩 变量支持** - `{{变量}}` 语法，自动识别和高亮
 - **📋 一键复制** - 点击即可复制提示词到剪贴板
-- **💾 本地存储** - 数据保存在 `userData/prompts.json`
+- **💾 本地存储** - 数据保存在 `userData/prompts.db` (SQLite)
 - **📥📤 导入/导出** - 支持 JSON 格式备份和恢复
 
 ### 🚧 计划中 (Roadmap)

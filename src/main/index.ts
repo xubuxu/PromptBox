@@ -148,12 +148,12 @@ function registerGlobalHotkey(): void {
         const registered = globalShortcut.register(hotkey, toggleWindow)
         if (registered) {
             _registeredHotkey = hotkey
-            console.log(`Global hotkey registered: ${hotkey}`)
+            logger.info(`Global hotkey registered: ${hotkey}`)
             return
         }
     }
 
-    console.warn('Failed to register any global hotkey. All combinations are in use.')
+    logger.warn('Failed to register any global hotkey. All combinations are in use.')
 }
 
 // App lifecycle

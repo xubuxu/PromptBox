@@ -17,3 +17,9 @@ npm-debug.log*
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Typescript build info
+*.tsbuildinfo
+
+# Text logs
+*_log.txt

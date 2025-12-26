@@ -11,7 +11,7 @@ root/
 │   │   ├── index.ts           # App entry, window, tray, global hotkeys
 │   │   ├── ipcHandlers.ts     # IPC handlers for CRUD operations
 │   │   ├── database.ts        # SQLite database operations (better-sqlite3)
-│   │   ├── store.ts           # Import/Export file operations
+│   │   ├── store.ts           # Configuration storage (electron-store)
 │   │   └── defaultPrompts.ts  # Default prompt data
 │   ├── preload/               # [Bridge] Security Layer
 │   │   ├── index.ts           # contextBridge exposure
@@ -29,7 +29,6 @@ root/
 │   └── shared/
 │       └── types.ts           # Shared type definitions
 ├── scripts/
-│   └── parsePrompts.ts        # Data parsing utility script
 └── resources/
     └── icon.png               # Application icon
 ```
