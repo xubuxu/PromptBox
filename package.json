@@ -28,6 +28,7 @@
     "electron-store": "^11.0.2",
     "lucide-react": "^0.468.0",
     "react-markdown": "^10.1.0",
+    "react-virtuoso": "^4.17.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^2.6.0",
     "uuid": "^11.0.3",

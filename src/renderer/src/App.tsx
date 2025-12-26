@@ -1,10 +1,29 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useDeferredValue, forwardRef } from 'react'
+import { VirtuosoGrid } from 'react-virtuoso'
 import { TitleBar, Sidebar, PromptCard, SearchBar, PromptEditor, Modal, SettingsModalContent, BatchActionBar } from './components'
 import { ViewType, SourceFilter } from './components/Sidebar'
 import { usePrompts } from './hooks/usePrompts'
 import { useFolders } from './hooks/useFolders'
 import { useTheme } from './contexts/ThemeContext'
 import { Loader2, Sparkles, Tag, ArrowLeft, CheckSquare, X, FolderOpen } from 'lucide-react'
+
+// Define VirtuosoGrid components outside App to prevent re-renders
+const GridList = forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(({ style, children, ...props }, ref) => (
+    <div
+        ref={ref}
+        {...props}
+        style={style}
+        className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 content-start pb-4"
+    >
+        {children}
+    </div>
+))
+
+const GridItem = ({ children, ...props }: React.ComponentProps<'div'>) => (
+    <div {...props} style={{ ...props.style, padding: 0, margin: 0 }}>
+        {children}
+    </div>
+)
 
 /**
  * Main Application Component
@@ -14,6 +33,8 @@ export default function App() {
         usePrompts()
     const { folders, createFolder, updateFolder, deleteFolder } = useFolders()
     const [searchQuery, setSearchQuery] = useState('')
+    // Defer the search query to avoid blocking UI during typing
+    const deferredSearchQuery = useDeferredValue(searchQuery)
     const [activeView, setActiveView] = useState<ViewType>('all')
     const [activeFolderId, setActiveFolderId] = useState<string | null>(null)
     const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all')
@@ -84,21 +105,13 @@ export default function App() {
         if (activeView === 'folders' && activeFolderId) {
             result = result.filter((p) => p.folderId === activeFolderId)
         } else if (activeView === 'folders' && !activeFolderId) {
-            // Show root folders' prompts or all folders?
-            // Usually clicking "Folders" shows root items.
-            // But for now let's say "folders" view without ID shows nothing or root prompts?
-            // Let's decide: activeView='folders' requires activeFolderId to be meaningful for prompts?
-            // Or maybe we treat 'folders' view as "Browsing folders". 
-            // If activeFolderId is null, show prompts with folderId === null ??
-            // Let's assume root prompts have folderId = null. 
-            // But wait, "All Prompts" shows everything. 
-            // "Folders" view should probably mimic file explorer.
+            // Show nothing or root prompts when just clicking "Folders" without selection
             result = result.filter((p) => p.folderId === activeFolderId)
         }
 
-        // Filter by search query
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase()
+        // Filter by search query (using deferred value)
+        if (deferredSearchQuery.trim()) {
+            const query = deferredSearchQuery.toLowerCase()
             result = result.filter(
                 (prompt) =>
                     prompt.title.toLowerCase().includes(query) ||
@@ -109,7 +122,7 @@ export default function App() {
         }
 
         return result
-    }, [prompts, searchQuery, activeView, selectedTag, sourceFilter])
+    }, [prompts, deferredSearchQuery, activeView, selectedTag, sourceFilter, activeFolderId])
 
     // Selection handlers
     const handleSelect = useCallback((id: string) => {
@@ -178,7 +191,8 @@ export default function App() {
         setIsModalOpen(false)
     }
 
-    const handleUpdatePrompt = async (
+    // Memoized update handler for PromptCard
+    const handleUpdatePrompt = useCallback(async (
         id: string,
         title: string,
         content: string,
@@ -195,7 +209,7 @@ export default function App() {
                 tags
             })
         }
-    }
+    }, [prompts, updatePrompt])
 
     /**
      * Handle import from sidebar - calls IPC import and refreshes list
@@ -210,6 +224,28 @@ export default function App() {
             console.error('Import failed:', error)
         }
     }
+
+    // Render item for Virtuoso
+    const renderPromptCard = useCallback((index: number) => {
+        const prompt = filteredPrompts[index]
+        if (!prompt) return null
+        return (
+            <PromptCard
+                key={prompt.id}
+                prompt={prompt}
+                onToggleFavorite={() => toggleFavorite(prompt.id)}
+                onDelete={() => deletePrompt(prompt.id)}
+                onUpdate={(title, content, tags, description) =>
+                    handleUpdatePrompt(prompt.id, title, content, tags, description)
+                }
+                onCopied={() => incrementCopyCount(prompt.id)}
+                selectionMode={selectionMode}
+                isSelected={selectedIds.has(prompt.id)}
+                onSelect={handleSelect}
+            />
+        )
+
+    }, [filteredPrompts, toggleFavorite, deletePrompt, handleUpdatePrompt, incrementCopyCount, selectionMode, selectedIds, handleSelect])
 
     return (
         <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -300,7 +336,7 @@ export default function App() {
                     </header>
 
                     {/* Content Area */}
-                    <div className="flex-1 overflow-y-auto p-4">
+                    <div className="flex-1 overflow-hidden p-4">
                         {isLoading ? (
                             <div className="flex h-full items-center justify-center">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -337,25 +373,17 @@ export default function App() {
                                 </div>
                             )
                         ) : filteredPrompts.length === 0 ? (
-                            <EmptyState onNewPrompt={handleNewPrompt} hasSearch={!!searchQuery.trim()} />
+                            <EmptyState onNewPrompt={handleNewPrompt} hasSearch={!!deferredSearchQuery.trim()} />
                         ) : (
-                            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                                {filteredPrompts.map((prompt) => (
-                                    <PromptCard
-                                        key={prompt.id}
-                                        prompt={prompt}
-                                        onToggleFavorite={() => toggleFavorite(prompt.id)}
-                                        onDelete={() => deletePrompt(prompt.id)}
-                                        onUpdate={(title, content, tags, description) =>
-                                            handleUpdatePrompt(prompt.id, title, content, tags, description)
-                                        }
-                                        onCopied={() => incrementCopyCount(prompt.id)}
-                                        selectionMode={selectionMode}
-                                        isSelected={selectedIds.has(prompt.id)}
-                                        onSelect={handleSelect}
-                                    />
-                                ))}
-                            </div>
+                            <VirtuosoGrid
+                                style={{ height: '100%' }}
+                                totalCount={filteredPrompts.length}
+                                components={{
+                                    List: GridList,
+                                    Item: GridItem
+                                }}
+                                itemContent={renderPromptCard}
+                            />
                         )}
                     </div>
                 </main>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import { Star, Copy, Trash2, Pencil, Check } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -32,7 +32,7 @@ function hasVariables(content: string): boolean {
 /**
  * Individual prompt card with view/edit modes
  */
-export function PromptCard({
+function PromptCardComponent({
     prompt,
     onToggleFavorite,
     onDelete,
@@ -276,7 +276,6 @@ export function PromptCard({
                 onCancel={() => setShowDeleteConfirm(false)}
             />
 
-            {/* Toast Notification */}
             {toast && (
                 <Toast
                     message={toast.message}
@@ -287,3 +286,5 @@ export function PromptCard({
         </>
     )
 }
+
+export const PromptCard = memo(PromptCardComponent)
