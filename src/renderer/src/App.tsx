@@ -275,7 +275,7 @@ export default function App() {
                                 {/* Selection Mode Toggle */}
                                 <button
                                     onClick={handleToggleSelectionMode}
-                                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors ${selectionMode
+                                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors cursor-pointer ${selectionMode
                                         ? 'bg-primary text-primary-foreground'
                                         : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                                         }`}

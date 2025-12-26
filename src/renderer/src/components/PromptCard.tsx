@@ -134,7 +134,7 @@ export function PromptCard({
             >
                 {/* Selection Checkbox */}
                 {selectionMode && (
-                    <div className="absolute -left-2 -top-2 z-10">
+                    <div className="absolute right-3 top-3 z-10">
                         <div
                             className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${isSelected
                                 ? 'border-primary bg-primary text-primary-foreground'

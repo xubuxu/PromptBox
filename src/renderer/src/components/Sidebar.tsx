@@ -1,6 +1,8 @@
 import { Home, Star, Settings, FolderOpen, Plus, User, Cpu, ChevronDown, TrendingUp, Upload, Folder, Trash, Edit2 } from 'lucide-react'
 import { Folder as FolderType } from '@shared/types'
 import { useState } from 'react'
+import { FolderModal } from './FolderModal'
+import { ConfirmDialog } from './ConfirmDialog'
 
 export type ViewType = 'all' | 'favorites' | 'collections' | 'mostUsed' | 'folders'
 export type SourceFilter = 'all' | 'user' | 'system'
@@ -19,6 +21,9 @@ interface SidebarProps {
     onCreateFolder?: (name: string, parentId: string | null) => void
     onUpdateFolder?: (folder: FolderType) => void
     onDeleteFolder?: (id: string) => void
+    tags?: string[]
+    selectedTag?: string | null
+    onTagSelect?: (tag: string) => void
 }
 
 /**
@@ -35,38 +40,52 @@ export function Sidebar({
     folders = [],
     activeFolderId,
     onFolderSelect,
+
     onCreateFolder,
     onUpdateFolder,
-    onDeleteFolder
+    onDeleteFolder,
+    tags = [],
+    selectedTag,
+    onTagSelect
 }: SidebarProps) {
-    const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
-    const [editName, setEditName] = useState('')
+    const [folderModalOpen, setFolderModalOpen] = useState(false)
+    const [folderModalMode, setFolderModalMode] = useState<'create' | 'rename'>('create')
+    const [selectedFolder, setSelectedFolder] = useState<FolderType | null>(null)
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
 
     const handleCreateFolder = () => {
-        if (onCreateFolder) {
-            // Simple prompt for now, could be a modal
-            const name = prompt('Enter folder name:')
-            if (name) {
-                onCreateFolder(name, null)
-            }
-        }
+        setFolderModalMode('create')
+        setSelectedFolder(null)
+        setFolderModalOpen(true)
     }
 
     const handleRenameFolder = (folder: FolderType, e: React.MouseEvent) => {
         e.stopPropagation()
-        const newName = prompt('Enter new folder name:', folder.name)
-        if (newName && newName !== folder.name && onUpdateFolder) {
-            onUpdateFolder({ ...folder, name: newName })
+        setFolderModalMode('rename')
+        setSelectedFolder(folder)
+        setFolderModalOpen(true)
+    }
+
+    const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation()
+        setDeleteConfirmId(id)
+    }
+
+    const handleFolderConfirm = (name: string) => {
+        if (folderModalMode === 'create' && onCreateFolder) {
+            onCreateFolder(name, null)
+        } else if (folderModalMode === 'rename' && selectedFolder && onUpdateFolder) {
+            onUpdateFolder({ ...selectedFolder, name })
         }
     }
 
-    const handleDeleteFolder = (id: string, e: React.MouseEvent) => {
-        e.stopPropagation()
-        if (confirm('Are you sure you want to delete this folder and its contents?')) {
-            onDeleteFolder?.(id)
-            if (activeFolderId === id) {
+    const handleDeleteConfirm = () => {
+        if (deleteConfirmId) {
+            onDeleteFolder?.(deleteConfirmId)
+            if (activeFolderId === deleteConfirmId) {
                 onFolderSelect?.(null)
             }
+            setDeleteConfirmId(null)
         }
     }
 
@@ -154,8 +173,8 @@ export function Sidebar({
                             <div
                                 key={folder.id}
                                 className={`group flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition-colors cursor-pointer ${activeFolderId === folder.id && activeView === 'folders'
-                                        ? 'bg-secondary text-foreground'
-                                        : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                                    ? 'bg-secondary text-foreground'
+                                    : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
                                     }`}
                                 onClick={() => onFolderSelect?.(folder.id)}
                             >
@@ -171,7 +190,7 @@ export function Sidebar({
                                         <Edit2 className="h-3 w-3" />
                                     </button>
                                     <button
-                                        onClick={(e) => handleDeleteFolder(folder.id, e)}
+                                        onClick={(e) => handleDeleteClick(folder.id, e)}
                                         className="p-0.5 hover:text-destructive"
                                     >
                                         <Trash className="h-3 w-3" />
@@ -182,18 +201,57 @@ export function Sidebar({
                     </div>
                 </div>
 
-                <NavItem
-                    icon={<FolderOpen className="h-4 w-4" />}
-                    label="Collections (Tags)"
-                    active={activeView === 'collections'}
-                    onClick={() => onViewChange('collections')}
-                />
+                <div>
+                    <NavItem
+                        icon={<FolderOpen className="h-4 w-4" />}
+                        label="Collections (Tags)"
+                        active={activeView === 'collections' && !selectedTag}
+                        onClick={() => onViewChange('collections')}
+                        hasSubmenu={activeView === 'collections'}
+                    />
+                    {activeView === 'collections' && tags.length > 0 && (
+                        <div className="ml-4 mt-1 space-y-0.5 border-l border-border pl-3">
+                            {tags.map(tag => (
+                                <button
+                                    key={tag}
+                                    onClick={() => onTagSelect?.(tag)}
+                                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors ${selectedTag === tag
+                                        ? 'bg-primary/10 text-primary font-medium'
+                                        : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                                        }`}
+                                >
+                                    <span className="truncate">#{tag}</span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </nav>
 
             {/* Bottom Section */}
             <div className="border-t border-border p-3">
                 <NavItem icon={<Settings className="h-4 w-4" />} label="Settings" onClick={onOpenSettings} />
             </div>
+
+            {/* Modals */}
+            <FolderModal
+                isOpen={folderModalOpen}
+                onClose={() => setFolderModalOpen(false)}
+                onConfirm={handleFolderConfirm}
+                title={folderModalMode === 'create' ? 'New Folder' : 'Rename Folder'}
+                initialName={folderModalMode === 'rename' ? selectedFolder?.name : ''}
+                confirmLabel={folderModalMode === 'create' ? 'Create' : 'Save'}
+            />
+
+            <ConfirmDialog
+                isOpen={!!deleteConfirmId}
+                title="Delete Folder"
+                message="Are you sure you want to delete this folder? All prompts inside it will be deleted permanently."
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                onConfirm={handleDeleteConfirm}
+                onCancel={() => setDeleteConfirmId(null)}
+            />
         </aside>
     )
 }

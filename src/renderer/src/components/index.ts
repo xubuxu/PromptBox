@@ -10,4 +10,5 @@ export { ConfirmDialog } from './ConfirmDialog'
 export { VariableInputModal } from './VariableInputModal'
 export { BatchActionBar } from './BatchActionBar'
 export { ErrorBoundary } from './ErrorBoundary'
+export { FolderModal } from './FolderModal'
 
