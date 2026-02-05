@@ -139,11 +139,10 @@
 
 [data-ui-style="elevated"] .card-elevated:hover,
 :root:not([data-ui-style]) .card-elevated:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow:
-    0 4px 8px rgba(0, 0, 0, 0.06),
-    0 8px 16px rgba(0, 0, 0, 0.06),
-    0 16px 32px rgba(0, 0, 0, 0.06);
+    0 12px 24px -10px rgba(0, 0, 0, 0.08),
+    0 24px 48px -12px rgba(0, 0, 0, 0.04);
 }
 
 /* Dark theme - Glassmorphism effect */
@@ -300,4 +299,44 @@
 
 [data-theme="dark"] .search-input:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+/* ============================================
+   Micro-interactions & Utilities
+   ============================================ */
+
+/* Button Click Effect */
+.btn-click-effect:active {
+  transform: scale(0.96);
+}
+
+/* Glass Panel (for Modals/Toasts) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+}
+
+/* Smooth Fade In */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

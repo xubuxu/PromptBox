@@ -12,6 +12,7 @@ interface BatchActionBarProps {
     onMoveToFolder?: (folderId: string | null) => void
     folders?: Folder[]
 }
+import { useTranslation } from 'react-i18next'
 
 /**
  * Floating action bar for batch operations on selected prompts
@@ -25,6 +26,7 @@ export function BatchActionBar({
     onMoveToFolder,
     folders = []
 }: BatchActionBarProps) {
+    const { t } = useTranslation()
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [showTagInput, setShowTagInput] = useState(false)
     const [tagInput, setTagInput] = useState('')
@@ -53,7 +55,7 @@ export function BatchActionBar({
                 <div className="flex items-center gap-2 border-r border-border pr-4">
                     <CheckSquare className="h-4 w-4 text-primary" />
                     <span className="text-sm font-medium text-foreground">
-                        {selectedCount} selected
+                        {t('actions.selectedCount', { count: selectedCount })}
                     </span>
                 </div>
 
@@ -65,7 +67,7 @@ export function BatchActionBar({
                             className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
                         >
                             <FolderInput className="h-4 w-4" />
-                            Move to...
+                            {t('actions.moveTo')}
                         </button>
 
                         {showFolderSelect && (
@@ -78,7 +80,7 @@ export function BatchActionBar({
                                         }}
                                         className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                                     >
-                                        Root (No Folder)
+                                        {t('actions.rootFolder')}
                                     </button>
                                     {folders.map(folder => (
                                         <button
@@ -106,7 +108,7 @@ export function BatchActionBar({
                             value={tagInput}
                             onChange={(e) => setTagInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                            placeholder="Tag name..."
+                            placeholder={t('actions.tagNamePlaceholder')}
                             className="w-32 rounded-md border border-border bg-secondary px-2 py-1 text-sm outline-none focus:border-primary"
                             autoFocus
                         />
@@ -114,7 +116,7 @@ export function BatchActionBar({
                             onClick={handleAddTag}
                             className="rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground"
                         >
-                            Add
+                            {t('actions.add')}
                         </button>
                         <button
                             onClick={() => setShowTagInput(false)}
@@ -129,7 +131,7 @@ export function BatchActionBar({
                         className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
                     >
                         <Tag className="h-4 w-4" />
-                        Add Tag
+                        {t('actions.addTag')}
                     </button>
                 )}
 
@@ -139,7 +141,7 @@ export function BatchActionBar({
                     className="flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
                 >
                     <Download className="h-4 w-4" />
-                    Export
+                    {t('actions.export')}
                 </button>
 
                 {/* Delete */}
@@ -148,14 +150,14 @@ export function BatchActionBar({
                     className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-red-500/20 hover:text-red-400"
                 >
                     <Trash2 className="h-4 w-4" />
-                    Delete
+                    {t('actions.delete')}
                 </button>
 
                 {/* Clear Selection */}
                 <button
                     onClick={onClearSelection}
                     className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    title="Clear selection"
+                    title={t('actions.clearSelection')}
                 >
                     <X className="h-4 w-4" />
                 </button>
@@ -164,10 +166,10 @@ export function BatchActionBar({
             {/* Delete Confirmation */}
             <ConfirmDialog
                 isOpen={showDeleteConfirm}
-                title="Delete Selected Prompts"
-                message={`Are you sure you want to delete ${selectedCount} prompt${selectedCount !== 1 ? 's' : ''}? This action cannot be undone.`}
-                confirmLabel="Delete All"
-                cancelLabel="Cancel"
+                title={t('actions.deleteSelectedTitle')}
+                message={t('actions.deleteSelectedConfirm', { count: selectedCount })}
+                confirmLabel={t('actions.deleteAll')}
+                cancelLabel={t('actions.cancel')}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setShowDeleteConfirm(false)}
             />

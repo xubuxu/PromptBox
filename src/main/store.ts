@@ -8,7 +8,9 @@ export interface StoreSchema {
     isFirstRun: boolean
 }
 
-let store: any = null
+import type Store from 'electron-store'
+
+let store: Store<StoreSchema> | null = null
 
 /**
  * Initialize electron-store asynchronously (ESM workaround)

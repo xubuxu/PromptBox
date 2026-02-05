@@ -10,7 +10,12 @@ root/
 │   ├── main/                  # [Backend] Node.js Environment
 │   │   ├── index.ts           # App entry, window, tray, global hotkeys
 │   │   ├── ipcHandlers.ts     # IPC handlers for CRUD operations
-│   │   ├── database.ts        # SQLite database operations (better-sqlite3)
+│   │   ├── database/          # Database connection managing
+│   │   │   └── connection.ts
+│   │   ├── repositories/      # Data access layer
+│   │   │   ├── BaseRepository.ts
+│   │   │   ├── PromptRepository.ts
+│   │   │   └── FolderRepository.ts
 │   │   ├── store.ts           # Configuration storage (electron-store)
 │   │   ├── logger.ts          # Logging utility (electron-log)
 │   │   └── defaultPrompts.ts  # Default prompt data
@@ -20,9 +25,15 @@ root/
 │   ├── renderer/              # [Frontend] React Environment
 │   │   ├── index.html
 │   │   └── src/
-│   │       ├── App.tsx        # Main application component
-│   │       ├── main.tsx       # React entry point
+│   │       ├── App.tsx        # App entry point (Routing/State container)
+│   │       ├── main.tsx       # React root render
+│   │       ├── i18n.ts        # i18n configuration
 │   │       ├── index.css      # Global styles
+│   │       ├── layouts/       # Layout components
+│   │       │   └── MainLayout.tsx
+│   │       ├── pages/         # Page components
+│   │       │   ├── HomePage.tsx
+│   │       │   └── CollectionsPage.tsx
 │   │       ├── components/    # UI components
 │   │       │   ├── BatchActionBar.tsx
 │   │       │   ├── ConfirmDialog.tsx
@@ -39,7 +50,10 @@ root/
 │   │       │   ├── VariableInputModal.tsx
 │   │       │   └── index.ts
 │   │       ├── contexts/      # React contexts (ThemeContext)
-│   │       ├── hooks/         # Custom hooks (usePrompts)
+│   │       ├── hooks/         # Custom hooks (usePrompts, useFilteredPrompts)
+│   │       ├── locales/       # i18n translation files
+│   │       │   ├── en.json
+│   │       │   └── zh.json
 │   │       └── utils/         # Utility functions (tagColors)
 │   └── shared/                # Shared modules across processes
 │       ├── types.ts           # Shared type definitions

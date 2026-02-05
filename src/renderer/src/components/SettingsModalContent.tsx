@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Download, Upload, Loader2, CheckCircle2, XCircle, Palette, Sparkles, Power, Database } from 'lucide-react'
+import { Download, Upload, Loader2, CheckCircle2, XCircle, Palette, Sparkles, Power, Database, Globe } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
+import { useTranslation } from 'react-i18next'
 
 interface SettingsModalContentProps {
     onImportSuccess: () => void
@@ -22,6 +23,12 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
     const [autoLaunch, setAutoLaunch] = useState(false)
     const [autoLaunchLoading, setAutoLaunchLoading] = useState(true)
     const { uiStyle, setUiStyle } = useTheme()
+    const { t, i18n } = useTranslation()
+
+    const changeLanguage = (lng: string) => {
+        i18n.changeLanguage(lng)
+        localStorage.setItem('language', lng)
+    }
 
     // Load auto-launch setting on mount
     useEffect(() => {
@@ -48,7 +55,7 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
      * Handles exporting all prompts to a JSON file
      */
     const handleExport = async () => {
-        setExportStatus({ type: 'loading', message: 'Exporting...' })
+        setExportStatus({ type: 'loading', message: t('settings.exporting') })
         try {
             const result = await window.api.exportData()
             if (result.includes('successfully')) {
@@ -68,7 +75,7 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
      * Handles importing prompts from a JSON file
      */
     const handleImport = async () => {
-        setImportStatus({ type: 'loading', message: 'Importing...' })
+        setImportStatus({ type: 'loading', message: t('settings.importing') })
         try {
             const result = await window.api.importData()
             if (result.includes('successfully')) {
@@ -90,7 +97,7 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
             {/* Startup Section */}
             <div>
                 <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                    Startup
+                    {t('settings.startup')}
                 </h3>
                 <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-4">
                     <div className="flex items-center gap-3">
@@ -98,9 +105,9 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                             <Power className="h-5 w-5 text-foreground" />
                         </div>
                         <div>
-                            <p className="font-medium text-foreground">Launch at startup</p>
+                            <p className="font-medium text-foreground">{t('settings.launchAtStartup')}</p>
                             <p className="text-sm text-muted-foreground">
-                                Start PromptBox when you log in
+                                {t('settings.launchDesc')}
                             </p>
                         </div>
                     </div>
@@ -118,10 +125,41 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                 </div>
             </div>
 
+            {/* Language Section */}
+            <div>
+                <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                    {t('settings.language')}
+                </h3>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => changeLanguage('en')}
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-2 p-3 transition-all ${i18n.language === 'en'
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-border bg-card hover:border-primary/50 text-foreground'
+                            }`}
+                    >
+                        <Globe className="h-4 w-4" />
+                        <span className="font-medium">English</span>
+                        {i18n.language === 'en' && <CheckCircle2 className="ml-2 h-4 w-4" />}
+                    </button>
+                    <button
+                        onClick={() => changeLanguage('zh')}
+                        className={`flex flex-1 items-center justify-center gap-2 rounded-xl border-2 p-3 transition-all ${i18n.language === 'zh'
+                            ? 'border-primary bg-primary/5 text-primary'
+                            : 'border-border bg-card hover:border-primary/50 text-foreground'
+                            }`}
+                    >
+                        <Globe className="h-4 w-4" />
+                        <span className="font-medium">简体中文</span>
+                        {i18n.language === 'zh' && <CheckCircle2 className="ml-2 h-4 w-4" />}
+                    </button>
+                </div>
+            </div>
+
             {/* Appearance Section */}
             <div>
                 <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                    Appearance
+                    {t('settings.appearance')}
                 </h3>
                 <div className="grid gap-3 sm:grid-cols-2">
                     {/* Elevated Cards Option */}
@@ -136,8 +174,8 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                             <Palette className="h-6 w-6 text-foreground" />
                         </div>
                         <div className="text-center">
-                            <p className="font-medium text-foreground">Elevated Cards</p>
-                            <p className="text-xs text-muted-foreground">Clean shadows & lift effects</p>
+                            <p className="font-medium text-foreground">{t('settings.elevatedCards')}</p>
+                            <p className="text-xs text-muted-foreground">{t('settings.elevatedDesc')}</p>
                         </div>
                         {uiStyle === 'elevated' && (
                             <div className="absolute right-2 top-2">
@@ -158,8 +196,8 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                             <Sparkles className="h-6 w-6 text-white" />
                         </div>
                         <div className="text-center">
-                            <p className="font-medium text-foreground">Gradient Accent</p>
-                            <p className="text-xs text-muted-foreground">Colorful borders & glows</p>
+                            <p className="font-medium text-foreground">{t('settings.gradientAccent')}</p>
+                            <p className="text-xs text-muted-foreground">{t('settings.gradientDesc')}</p>
                         </div>
                         {uiStyle === 'gradient' && (
                             <div className="absolute right-2 top-2">
@@ -173,7 +211,7 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
             {/* Data Management Section */}
             <div>
                 <h3 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                    Data Management
+                    {t('settings.dataManagement')}
                 </h3>
                 <div className="space-y-3">
                     {/* Database Location */}
@@ -182,9 +220,9 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                     {/* Export Button */}
                     <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-4">
                         <div>
-                            <p className="font-medium text-foreground">Export Prompts</p>
+                            <p className="font-medium text-foreground">{t('settings.exportPrompts')}</p>
                             <p className="text-sm text-muted-foreground">
-                                Save all prompts to a JSON backup file
+                                {t('settings.exportDesc')}
                             </p>
                         </div>
                         <button
@@ -197,7 +235,7 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                             ) : (
                                 <Download className="h-4 w-4" />
                             )}
-                            Export
+                            {t('actions.export')}
                         </button>
                     </div>
                     {exportStatus.message && (
@@ -207,9 +245,9 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
                     {/* Import Button */}
                     <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-4">
                         <div>
-                            <p className="font-medium text-foreground">Import Prompts</p>
+                            <p className="font-medium text-foreground">{t('settings.importPrompts')}</p>
                             <p className="text-sm text-muted-foreground">
-                                Load prompts from a JSON backup file
+                                {t('settings.importDesc')}
                             </p>
                         </div>
                         <button
@@ -234,8 +272,7 @@ export function SettingsModalContent({ onImportSuccess }: SettingsModalContentPr
             {/* Info Note */}
             <div className="rounded-lg border border-border bg-secondary/20 p-3">
                 <p className="text-xs text-muted-foreground">
-                    <strong>Note:</strong> When importing, prompts with the same ID will be updated.
-                    New prompts will be added to your collection.
+                    {t('settings.importNote')}
                 </p>
             </div>
         </div>
@@ -249,6 +286,7 @@ function DatabaseLocationSettings() {
     const [dbPath, setDbPath] = useState<string>('')
     const [loading, setLoading] = useState(false)
     const [status, setStatus] = useState<StatusState>({ type: 'idle', message: '' })
+    const { t } = useTranslation()
 
     useEffect(() => {
         window.api.getDbPath().then(setDbPath)
@@ -256,7 +294,7 @@ function DatabaseLocationSettings() {
 
     const handleMoveDb = async () => {
         setLoading(true)
-        setStatus({ type: 'loading', message: 'Moving database...' })
+        setStatus({ type: 'loading', message: t('settings.movingDb') })
         try {
             const result = await window.api.moveDb()
             if (result.success) {
@@ -289,9 +327,9 @@ function DatabaseLocationSettings() {
                         <Database className="h-5 w-5 text-foreground" />
                     </div>
                     <div>
-                        <p className="font-medium text-foreground">Storage Location</p>
+                        <p className="font-medium text-foreground">{t('settings.storageLocation')}</p>
                         <p className="text-sm text-muted-foreground break-all max-w-[200px] sm:max-w-xs truncate" title={dbPath}>
-                            {dbPath || 'Loading...'}
+                            {dbPath || t('app.loading')}
                         </p>
                     </div>
                 </div>
@@ -300,7 +338,7 @@ function DatabaseLocationSettings() {
                     disabled={loading}
                     className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
                 >
-                    {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Change'}
+                    {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : t('settings.change')}
                 </button>
             </div>
             {status.message && (

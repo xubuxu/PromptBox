@@ -10,7 +10,9 @@
             "ES2020",
             "DOM",
             "DOM.Iterable"
-        ]
+        ],
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true
     },
     "include": [
         "src/renderer/**/*",

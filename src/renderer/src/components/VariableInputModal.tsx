@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { X, Copy, Sparkles, RotateCcw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface VariableInputModalProps {
     isOpen: boolean
@@ -84,6 +85,7 @@ export function VariableInputModal({
 }: VariableInputModalProps) {
     const variables = useMemo(() => extractVariables(content), [content])
     const storedValues = useMemo(() => getStoredValues(promptId), [promptId])
+    const { t } = useTranslation()
 
     const [values, setValues] = useState<Record<string, string>>({})
 
@@ -149,7 +151,7 @@ export function VariableInputModal({
                 <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-accent" />
-                        <h2 className="text-lg font-semibold text-foreground">Fill Variables</h2>
+                        <h2 className="text-lg font-semibold text-foreground">{t('variableModal.title')}</h2>
                     </div>
                     <button
                         onClick={onClose}
@@ -161,7 +163,7 @@ export function VariableInputModal({
 
                 {/* Prompt Title */}
                 <p className="mb-4 text-sm text-muted-foreground">
-                    Filling variables for: <span className="font-medium text-foreground">{promptTitle}</span>
+                    {t('variableModal.fillingFor')} <span className="font-medium text-foreground">{promptTitle}</span>
                 </p>
 
                 {/* Variable Inputs */}
@@ -176,10 +178,10 @@ export function VariableInputModal({
                                     <button
                                         onClick={() => handleReset(varInfo.name)}
                                         className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                                        title="Reset to default"
+                                        title={t('variableModal.resetTooltip')}
                                     >
                                         <RotateCcw className="h-3 w-3" />
-                                        Reset
+                                        {t('variableModal.reset')}
                                     </button>
                                 )}
                             </div>
@@ -187,13 +189,13 @@ export function VariableInputModal({
                                 type="text"
                                 value={values[varInfo.name] || ''}
                                 onChange={(e) => handleValueChange(varInfo.name, e.target.value)}
-                                placeholder={varInfo.defaultValue || `Enter ${varInfo.name}...`}
+                                placeholder={varInfo.defaultValue || t('variableModal.enterValue', { name: varInfo.name })}
                                 className="w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder-muted-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
                                 autoFocus={index === 0}
                             />
                             {varInfo.defaultValue && (
                                 <p className="mt-1 text-xs text-muted-foreground">
-                                    Default: {varInfo.defaultValue}
+                                    {t('variableModal.default', { value: varInfo.defaultValue })}
                                 </p>
                             )}
                         </div>
@@ -206,22 +208,22 @@ export function VariableInputModal({
                         onClick={onClose}
                         className="rounded-lg border border-border bg-secondary px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80"
                     >
-                        Cancel
+                        {t('actions.cancel')}
                     </button>
                     <button
                         onClick={handleCopy}
                         className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md"
                     >
                         <Copy className="h-4 w-4" />
-                        Copy
+                        {t('actions.copy')}
                     </button>
                 </div>
 
                 {/* Hint */}
                 <p className="mt-4 text-center text-xs text-muted-foreground">
-                    Press <kbd className="rounded bg-secondary px-1.5 py-0.5">Ctrl</kbd> + <kbd className="rounded bg-secondary px-1.5 py-0.5">Enter</kbd> to copy
+                    {t('variableModal.keyboardHint')}
                     {Object.keys(storedValues).length > 0 && (
-                        <span className="block mt-1 text-accent">Values remembered from last use</span>
+                        <span className="block mt-1 text-accent">{t('variableModal.remembered')}</span>
                     )}
                 </p>
             </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { X, Save, FolderOpen } from 'lucide-react'
 import { Prompt, Folder } from '@shared/types'
+import { useTranslation } from 'react-i18next'
 
 interface PromptEditorProps {
     prompt?: Prompt
@@ -13,6 +14,7 @@ interface PromptEditorProps {
  * Editor form for creating/editing prompts
  */
 export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptEditorProps) {
+    const { t } = useTranslation()
     const [title, setTitle] = useState(prompt?.title || '')
     const [description, setDescription] = useState(prompt?.description || '')
     const [content, setContent] = useState(prompt?.content || '')
@@ -36,13 +38,13 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
             {/* Title Input */}
             <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Title
+                    {t('prompt.titleLabel')}
                 </label>
                 <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter prompt title..."
+                    placeholder={t('prompt.titlePlaceholder')}
                     className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     autoFocus
                 />
@@ -51,16 +53,16 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
             {/* Description Input */}
             <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Description
+                    {t('prompt.descLabel')}
                     <span className="ml-2 text-xs text-muted-foreground">
-                        Optional, one-line purpose
+                        {t('prompt.descPlaceholder')}
                     </span>
                 </label>
                 <input
                     type="text"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="e.g., Generate daily stand-up notes"
+                    placeholder={t('prompt.descPlaceholder')}
                     className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
             </div>
@@ -68,15 +70,15 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
             {/* Content Textarea */}
             <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Content
+                    {t('prompt.contentLabel')}
                     <span className="ml-2 text-xs text-muted-foreground">
-                        Use {"{{variable}}"} for dynamic content
+                        {t('prompt.contentPlaceholder')}
                     </span>
                 </label>
                 <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="Enter your prompt content..."
+                    placeholder={t('prompt.contentPlaceholder')}
                     rows={6}
                     className="w-full resize-none rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
@@ -85,16 +87,16 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
             {/* Tags Input */}
             <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">
-                    Tags
+                    {t('prompt.tagsLabel')}
                     <span className="ml-2 text-xs text-muted-foreground">
-                        Comma separated
+                        {t('prompt.tagsPlaceholder')}
                     </span>
                 </label>
                 <input
                     type="text"
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="e.g., coding, gpt-4, writing"
+                    placeholder={t('prompt.tagsPlaceholder')}
                     className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
             </div>
@@ -105,10 +107,10 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
                     <label className="mb-1.5 block text-sm font-medium text-foreground">
                         <span className="flex items-center gap-1.5">
                             <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                            Folder
+                            {t('prompt.folderLabel')}
                         </span>
                         <span className="ml-5.5 text-xs text-muted-foreground">
-                            Optional, organize your prompts
+                            {t('prompt.selectFolder')}
                         </span>
                     </label>
                     <select
@@ -116,7 +118,7 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
                         onChange={(e) => setSelectedFolderId(e.target.value || null)}
                         className="w-full rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
-                        <option value="">No folder</option>
+                        <option value="">{t('prompt.noFolder')}</option>
                         {folders.map((folder) => (
                             <option key={folder.id} value={folder.id}>
                                 {folder.name}
@@ -134,7 +136,7 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
                     className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                     <X className="h-4 w-4" />
-                    Cancel
+                    {t('actions.cancel')}
                 </button>
                 <button
                     type="submit"
@@ -142,7 +144,7 @@ export function PromptEditor({ prompt, folders = [], onSave, onCancel }: PromptE
                     className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <Save className="h-4 w-4" />
-                    Save
+                    {t('actions.save')}
                 </button>
             </div>
         </form>

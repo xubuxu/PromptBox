@@ -9,6 +9,7 @@ import { ConfirmDialog } from './ConfirmDialog'
 import { VariableInputModal } from './VariableInputModal'
 import { useTheme } from '../contexts/ThemeContext'
 import { getTagColor, sortTags } from '../utils/tagColors'
+import { useTranslation } from 'react-i18next'
 
 interface PromptCardProps {
     prompt: Prompt
@@ -49,6 +50,7 @@ function PromptCardComponent({
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
     const { theme, uiStyle } = useTheme()
+    const { t } = useTranslation()
 
     const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
         setToast({ message, type })
@@ -63,20 +65,20 @@ function PromptCardComponent({
     const handleCopy = useCallback(() => {
         // Always copy raw content immediately
         navigator.clipboard.writeText(copyContent)
-        showToast('Copied to clipboard!')
+        showToast(t('promptCard.copied'))
         onCopied?.()
 
         // If content has variables, also open the variable input modal for optional filling
         if (hasVariables(copyContent)) {
             setShowVariableModal(true)
         }
-    }, [copyContent, showToast, onCopied])
+    }, [copyContent, showToast, onCopied, t])
 
     const handleVariableCopy = useCallback((filledContent: string) => {
         navigator.clipboard.writeText(filledContent)
-        showToast('Copied to clipboard!')
+        showToast(t('promptCard.copied'))
         onCopied?.()
-    }, [showToast, onCopied])
+    }, [showToast, onCopied, t])
 
     const handleSave = (title: string, content: string, tags: string[], description?: string, folderId?: string | null) => {
         onUpdate(title, content, tags, description, folderId)
@@ -135,7 +137,7 @@ function PromptCardComponent({
     return (
         <>
             <div
-                className={`group relative flex h-[220px] flex-col border bg-card p-4 hover:border-primary/50 ${cardStyleClass} ${isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
+                className={`group relative flex h-[220px] flex-col border bg-card p-4 transition-all duration-200 active:scale-[0.98] ${cardStyleClass} ${isSelected ? 'border-primary ring-2 ring-primary/30' : 'border-border'
                     } ${selectionMode ? 'cursor-pointer' : ''}`}
                 onClick={handleCardClick}
             >
@@ -206,7 +208,7 @@ function PromptCardComponent({
                                 <span
                                     key={index}
                                     className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-mono border transition-colors ${variableBadgeClass}`}
-                                    title={`Variable: ${variable}`}
+                                    title={t('promptCard.variableTitle', { name: variable })}
                                 >
                                     {variable}
                                 </span>
@@ -250,21 +252,21 @@ function PromptCardComponent({
                         className={`flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground ${btnHoverClass}`}
                     >
                         <Copy className="h-3.5 w-3.5" />
-                        Copy
+                        {t('actions.copy')}
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); setIsEditing(true) }}
                         className={`flex items-center gap-1.5 rounded-md bg-secondary px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground ${btnHoverClass}`}
                     >
                         <Pencil className="h-3.5 w-3.5" />
-                        Edit
+                        {t('actions.edit')}
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteClick() }}
                         className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-red-500/20 hover:text-red-400"
                     >
                         <Trash2 className="h-3.5 w-3.5" />
-                        Delete
+                        {t('actions.delete')}
                     </button>
                 </div>
             </div>
@@ -282,10 +284,10 @@ function PromptCardComponent({
             {/* Delete Confirmation Dialog */}
             <ConfirmDialog
                 isOpen={showDeleteConfirm}
-                title="Delete Prompt"
-                message={`Are you sure you want to delete "${prompt.title}"? This action cannot be undone.`}
-                confirmLabel="Delete"
-                cancelLabel="Cancel"
+                title={t('promptCard.deleteTitle')}
+                message={t('promptCard.deleteConfirm', { title: prompt.title })}
+                confirmLabel={t('actions.delete')}
+                cancelLabel={t('actions.cancel')}
                 onConfirm={handleDeleteConfirm}
                 onCancel={() => setShowDeleteConfirm(false)}
             />

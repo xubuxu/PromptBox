@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import { Modal } from './Modal'
+import { useTranslation } from 'react-i18next'
 
 interface FolderModalProps {
     isOpen: boolean
@@ -17,9 +18,11 @@ export function FolderModal({
     onConfirm,
     initialName = '',
     title,
-    confirmLabel = 'Save'
+    confirmLabel
 }: FolderModalProps) {
     const [name, setName] = useState(initialName)
+    const { t } = useTranslation()
+    const finalConfirmLabel = confirmLabel || t('folderModal.save')
 
     useEffect(() => {
         if (isOpen) {
@@ -40,13 +43,13 @@ export function FolderModal({
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-foreground mb-1">
-                        Folder Name
+                        {t('folderModal.nameLabel')}
                     </label>
                     <input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter folder name..."
+                        placeholder={t('folderModal.namePlaceholder')}
                         className="w-full rounded-md border border-input bg-secondary/50 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         autoFocus
                     />
@@ -57,14 +60,14 @@ export function FolderModal({
                         onClick={onClose}
                         className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
                     >
-                        Cancel
+                        {t('actions.cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={!name.trim()}
                         className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {confirmLabel}
+                        {finalConfirmLabel}
                     </button>
                 </div>
             </form>

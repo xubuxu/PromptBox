@@ -38,9 +38,9 @@ export function Toast({ message, type = 'success', duration = 2000, onClose }: T
 
     return (
         <div
-            className={`fixed bottom-4 right-4 z-[100] flex items-center gap-2 rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm transition-all duration-300 ${bgColor} ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
+            className={`glass-panel fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-xl px-5 py-4 shadow-2xl transition-all duration-500 ${bgColor} ${isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
                 }`}
-            style={{ animation: 'slideInFromRight 0.3s ease-out' }}
+            style={{ animation: 'slideInFromRight 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
             <Icon className={`h-4 w-4 ${iconColor}`} />
             <span className="text-sm font-medium text-foreground">{message}</span>

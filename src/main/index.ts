@@ -25,7 +25,6 @@ process.on('unhandledRejection', (reason) => {
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
-let _registeredHotkey: string | null = null
 let isQuitting = false
 
 /**
@@ -147,7 +146,6 @@ function registerGlobalHotkey(): void {
     for (const hotkey of hotkeys) {
         const registered = globalShortcut.register(hotkey, toggleWindow)
         if (registered) {
-            _registeredHotkey = hotkey
             logger.info(`Global hotkey registered: ${hotkey}`)
             return
         }

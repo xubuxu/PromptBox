@@ -26,7 +26,6 @@ export interface Prompt {
     /** Unix timestamp of creation */
     createdAt: number;
     /** Unix timestamp of last update */
-    /** Unix timestamp of last update */
     updatedAt: number;
     /** ID of the folder this prompt belongs to (null for root) */
     folderId?: string | null;
